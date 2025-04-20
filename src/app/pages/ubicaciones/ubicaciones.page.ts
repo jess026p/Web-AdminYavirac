@@ -19,6 +19,7 @@ import {
   IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
+
 @Component({
   selector: 'app-ubicaciones',
   templateUrl: './ubicaciones.page.html',

@@ -1,10 +1,17 @@
-/* Fondo degradado */
+/* === FONDO GENERAL === */
 .fondo-personalizado {
   --background: linear-gradient(to bottom, rgb(177, 197, 237), #03266e);
-  height: 100%;
+  min-height: 100%;
 }
 
-/* Tarjeta con efecto glass más alta */
+/* === AJUSTE DEL CONTENIDO === */
+ion-content {
+  padding-top: 24px;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* === TARJETA ADMIN PANEL === */
 .panel-admin-glass {
   background: rgba(255, 255, 255, 0.64);
   backdrop-filter: blur(14px);
@@ -12,11 +19,11 @@
   border-radius: 20px;
   box-shadow: 0 8px 8px rgb(101, 96, 96);
   padding: 24px;
-  min-height: 580px; /* ↑ MÁS ALTA */
+  min-height: 580px;
   transition: all 0.3s ease-in-out;
 }
 
-/* Cabecera con título y buscador */
+/* === CABECERA Y BUSCADOR === */
 .cabecera-admin {
   display: flex;
   justify-content: space-between;
@@ -44,7 +51,7 @@
   padding-inline-start: 8px;
 }
 
-/* Estadísticas */
+/* === CUADROS ESTADÍSTICOS === */
 .box {
   border-radius: 10px;
   padding: 10px;
@@ -53,6 +60,7 @@
   text-align: center;
   font-size: 14px;
 }
+
 .box-azul    { background-color: #1565c0; }
 .box-verde   { background-color: #2e7d32; }
 .box-rojo    { background-color: #b71c1c; }
@@ -63,6 +71,7 @@ ion-badge {
   border-radius: 6px;
 }
 
+/* === BOTÓN DE HISTORIAL === */
 ion-button[color="medium"] {
   --background: #424242;
   color: #fff;
@@ -70,10 +79,5 @@ ion-button[color="medium"] {
   border-radius: 8px;
   margin-top: 16px;
 }
-
-
-
-
-
-
+/***/
 

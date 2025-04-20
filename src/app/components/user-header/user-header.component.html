@@ -1,0 +1,17 @@
+<ion-header class="user-header">
+  <ion-toolbar color="primary">
+    <ion-title>Sistema de Asistencia</ion-title>
+    <ion-buttons slot="end">
+      <ion-item lines="none" class="user-badge">
+        <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+        <ion-label>
+          {{ nombreUsuario }}<br />
+          <small>{{ rolUsuario }}</small>
+        </ion-label>
+        <ion-button fill="clear" color="danger" (click)="logout()">
+          <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>

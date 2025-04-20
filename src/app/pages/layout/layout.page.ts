@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component,OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
-import { RouterModule } from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { addIcons } from 'ionicons';
@@ -19,4 +19,24 @@ addIcons({
   templateUrl: './layout.page.html',
   styleUrls: ['./layout.page.scss'],
 })
-export class LayoutPage {}
+export class LayoutPage implements OnInit {
+  nombreUsuario: string = '';
+  rolUsuario: string = '';
+
+  constructor(private router: Router) {}
+
+  ngOnInit() {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      this.nombreUsuario = `${user.name || ''} ${user.lastname || ''}`;
+      this.rolUsuario = user.roles?.[0]?.name || 'Sin rol';
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
+  }
+}

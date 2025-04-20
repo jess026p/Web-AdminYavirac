@@ -1,5 +1,4 @@
-
-/* Forzar el ancho real del ion-menu */
+/* === MENÚ LATERAL (ion-menu) === */
 .sidebar {
   width: 200px !important;
   max-width: 200px !important;
@@ -7,7 +6,6 @@
   overflow-x: hidden !important;
 }
 
-/* === LOGO CENTRADO === */
 .sidebar-header,
 .sidebar ion-toolbar {
   display: flex;
@@ -32,8 +30,7 @@
   object-fit: contain;
 }
 
-/* === LISTA DEL MENÚ === */
-ion-content,
+ion-menu ion-content,
 ion-list {
   --background: #005baa !important;
   background-color: #005baa !important;
@@ -42,31 +39,22 @@ ion-list {
   color: white !important;
 }
 
-/* === ÍTEMS DEL MENÚ SIN LÍNEAS NI BORDES === */
 ion-item {
   --background: transparent !important;
   --color: white !important;
   --inner-border-width: 0px !important;
-  --border-width: 0 !important;
   border: none !important;
-  box-shadow: none !important;
   font-size: 15px;
   margin: 4px 10px;
   border-radius: 6px;
 }
 
-
-
-
-/* === ÍCONOS BLANCOS === */
-ion-icon {
-  font-size: 18px;
-  color: #cc0101 !important;
+ion-icon[slot="start"] {
+  color: white !important;
+  margin-right: 6px;
+  font-size: 20px;
 }
 
-
-
-/* === BOTÓN HAMBURGUESA EN MÓVIL === */
 .menu-button {
   position: fixed;
   top: 14px;
@@ -85,16 +73,96 @@ ion-icon {
   }
 }
 
-
-body, ion-content, ion-split-pane {
-  overflow-x: hidden !important;
+/* === HEADER SUPERIOR === */
+ion-toolbar {
+  --min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-/* ÍCONOS visibles, blancos y bien alineados */
-ion-icon[slot="start"] {
+
+ion-title {
+  font-size: 22px;
+  font-weight: bold;
+
+  flex: 1;
+  margin: 0 auto;
+  color: white;
+}
+
+/* === USUARIO HEADER === */
+.usuario-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.icono-usuario {
+  font-size: 32px;
+  border-radius: 50%;
+  background-color: #003c8f;
+  padding: 6px;
+  color: white;
+}
+
+.info-usuario {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  line-height: 1.1;
+  font-size: 13px;
+}
+
+.nombre {
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+}
+
+.rol {
+  font-size: 12px;
+  opacity: 0.9;
+  color: white;
+}
+
+.btn-cerrar {
+  font-size: 10px;
   color: white !important;
-  margin-right: 6px;
-  font-size: 20px;
+  --padding-start: 0;
+  --padding-end: 0;
+  margin-left: 23px;
 }
 
+/* === CONTENIDO === */
+ion-split-pane {
+  height: 100vh;
+}
 
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
+ion-router-outlet {
+  flex-grow: 1;
+  display: block;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+/* Asegura que no se corte el contenido */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+::ng-deep ion-router-outlet > * ion-content {
+  padding-top: 20px !important;
+  margin-top: 16px !important;
+}
