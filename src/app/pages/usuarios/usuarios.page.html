@@ -1,0 +1,54 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Gestión de Usuarios</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="abrirFormulario()">
+        <ion-icon name="person-add-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-grid>
+    <ion-row class="ion-align-items-center ion-justify-content-between">
+      <!-- Botón Agregar a la izquierda -->
+      <ion-col size="12" size-md="4">
+        <ion-button (click)="abrirFormulario()" color="primary">
+          <img src="assets/imagenes/agregar.png" class="icono-img" />
+          Agregar Usuario
+        </ion-button>
+      </ion-col>
+
+      <!-- Barra de búsqueda a la derecha -->
+      <ion-col size="12" size-md="8">
+        <ion-searchbar
+          placeholder="Buscar usuarios..."
+          [(ngModel)]="busqueda"
+          (ionInput)="filtrarUsuarios()"
+          class="buscador">
+        </ion-searchbar>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-list>
+    <ion-item *ngFor="let usuario of usuariosFiltrados">
+      <ion-label>
+        <h2>{{ usuario.name }} {{ usuario.lastname }}</h2>
+        <p>{{ usuario.email }} ({{ usuario.username }})</p>
+        <p>
+          <span *ngFor="let rol of usuario.roles" class="rol-badge">{{ rol.name }}</span>
+        </p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button fill="clear" (click)="editarUsuario(usuario)">
+          <img src="assets/imagenes/editar.png" class="icono-img" />
+        </ion-button>
+        <ion-button fill="clear" (click)="eliminarUsuario(usuario.id!)">
+          <img src="assets/imagenes/delete.png" class="icono-img" />
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+</ion-content>

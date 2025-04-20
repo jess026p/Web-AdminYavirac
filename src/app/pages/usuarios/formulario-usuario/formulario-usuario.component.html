@@ -1,0 +1,89 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ editMode ? 'Editar' : 'Nuevo' }} Usuario</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+    <ion-list>
+      <ion-item lines="full">
+        <ion-label position="stacked">Nombre de usuario*</ion-label>
+        <ion-input formControlName="username" type="text" placeholder="Ingrese nombre de usuario"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('username')?.touched && userForm.get('username')?.hasError('required')">
+          El nombre de usuario es obligatorio
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label position="stacked">Nombre*</ion-label>
+        <ion-input formControlName="name" type="text" placeholder="Ingrese nombre"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('name')?.touched && userForm.get('name')?.hasError('required')">
+          El nombre es obligatorio
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label position="stacked">Apellido*</ion-label>
+        <ion-input formControlName="lastname" type="text" placeholder="Ingrese apellido"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('lastname')?.touched && userForm.get('lastname')?.hasError('required')">
+          El apellido es obligatorio
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label position="stacked">Correo electrónico*</ion-label>
+        <ion-input formControlName="email" type="email" placeholder="ejemplo@correo.com"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('email')?.touched && userForm.get('email')?.hasError('required')">
+          El correo es obligatorio
+        </ion-note>
+        <ion-note slot="error" *ngIf="userForm.get('email')?.touched && userForm.get('email')?.hasError('email')">
+          Formato de correo inválido
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label position="stacked">Identificación*</ion-label>
+        <ion-input formControlName="identification" type="text" placeholder="Ingrese identificación"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('identification')?.touched && userForm.get('identification')?.hasError('required')">
+          La identificación es obligatoria
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="full" *ngIf="!editMode">
+        <ion-label position="stacked">Contraseña*</ion-label>
+        <ion-input formControlName="password" type="password" placeholder="Mínimo 6 caracteres"></ion-input>
+        <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('required')">
+          La contraseña es obligatoria
+        </ion-note>
+        <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('minlength')">
+          La contraseña debe tener al menos 6 caracteres
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="none">
+        <ion-label position="stacked">Roles*</ion-label>
+        <ion-select formControlName="roles" multiple="true" placeholder="Seleccione roles">
+          <ion-select-option *ngFor="let rol of roles" [value]="rol">{{ rol.name }}</ion-select-option>
+        </ion-select>
+        <ion-note slot="error" *ngIf="userForm.get('roles')?.touched && userForm.get('roles')?.hasError('required')">
+          Debe seleccionar al menos un rol
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <div class="ion-padding ion-text-center">
+      <ion-button type="submit" expand="block" [disabled]="userForm.invalid">
+        {{ editMode ? 'Actualizar' : 'Crear' }}
+      </ion-button>
+      <ion-button type="button" expand="block" fill="outline" (click)="cancel()" class="ion-margin-top">
+        Cancelar
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

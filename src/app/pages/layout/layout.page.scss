@@ -1,0 +1,100 @@
+
+/* Forzar el ancho real del ion-menu */
+.sidebar {
+  width: 200px !important;
+  max-width: 200px !important;
+  min-width: 200px !important;
+  overflow-x: hidden !important;
+}
+
+/* === LOGO CENTRADO === */
+.sidebar-header,
+.sidebar ion-toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  width: 200px !important;
+}
+
+.logo-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* === LISTA DEL MENÚ === */
+ion-content,
+ion-list {
+  --background: #005baa !important;
+  background-color: #005baa !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: white !important;
+}
+
+/* === ÍTEMS DEL MENÚ SIN LÍNEAS NI BORDES === */
+ion-item {
+  --background: transparent !important;
+  --color: white !important;
+  --inner-border-width: 0px !important;
+  --border-width: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 15px;
+  margin: 4px 10px;
+  border-radius: 6px;
+}
+
+
+
+
+/* === ÍCONOS BLANCOS === */
+ion-icon {
+  font-size: 18px;
+  color: #cc0101 !important;
+}
+
+
+
+/* === BOTÓN HAMBURGUESA EN MÓVIL === */
+.menu-button {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 999;
+  background-color: #84bae8;
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .menu-button {
+    display: block;
+  }
+}
+
+
+body, ion-content, ion-split-pane {
+  overflow-x: hidden !important;
+}
+/* ÍCONOS visibles, blancos y bien alineados */
+ion-icon[slot="start"] {
+  color: white !important;
+  margin-right: 6px;
+  font-size: 20px;
+}
+
+
+

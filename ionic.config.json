@@ -1,0 +1,7 @@
+{
+  "name": "admin-panelYavirac",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

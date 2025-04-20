@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Asignar Ubicación</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Filtrar por Provincia y Ciudad</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-select placeholder="Seleccionar provincia" [(ngModel)]="provinciaSeleccionada" (ionChange)="onProvinciaChange()">
+        <ion-select-option *ngFor="let provincia of provincias" [value]="provincia.nombre">
+          {{ provincia.nombre }}
+        </ion-select-option>
+      </ion-select>
+
+      <ion-select placeholder="Seleccionar ciudad" [(ngModel)]="ciudadSeleccionada" [disabled]="!provinciaSeleccionada">
+        <ion-select-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad">
+          {{ ciudad }}
+        </ion-select-option>
+      </ion-select>
+
+      <ion-button expand="block" (click)="centrarEnCiudad()" [disabled]="!ciudadSeleccionada">
+        Buscar ciudad en el mapa
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Seleccionar Usuario</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-select placeholder="Seleccionar usuario" [(ngModel)]="usuarioSeleccionado">
+        <ion-select-option *ngFor="let user of usuarios" [value]="user.id">
+          {{ user.nombre }}
+        </ion-select-option>
+      </ion-select>
+    </ion-card-content>
+  </ion-card>
+
+  <div id="map" style="height: 300px; width: 100%; border-radius: 10px; margin-top: 10px;"></div>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Ubicación seleccionada</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p><strong>Latitud:</strong> {{ lat }}</p>
+      <p><strong>Longitud:</strong> {{ lon }}</p>
+      <p><strong>Dirección:</strong> {{ direccion }}</p>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-button expand="block" color="primary" (click)="guardarUbicacion()">
+    Guardar ubicación para el usuario
+  </ion-button>
+
+</ion-content>

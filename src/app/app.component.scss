@@ -1,0 +1,19 @@
+// Estilos para el modal de usuarios
+.usuario-modal {
+  --width: 85%;
+  --max-width: 400px;
+  --height: auto;
+  --border-radius: 12px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 768px) {
+  .usuario-modal {
+    --width: 550px;
+  }
+}
+
+// Corrección para los iconos
+ion-icon {
+  font-size: 24px;
+}

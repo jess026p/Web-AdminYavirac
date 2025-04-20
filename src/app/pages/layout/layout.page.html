@@ -1,0 +1,34 @@
+<ion-split-pane contentId="main-content" >
+  <ion-menu contentId="main-content" side="start" type="overlay" class="sidebar">
+
+  <ion-header class="sidebar-header">
+      <div class="logo-container">
+        <img src="assets/imagenes/logo_loginYavirac.png" alt="Logo" class="logo" />
+      </div>
+    </ion-header>
+
+    <ion-content>
+      <ion-list>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item routerLink="/layout/home" routerDirection="root">
+            <ion-icon name="home-outline" slot="start"></ion-icon>
+            <ion-label>Administrador</ion-label>
+          </ion-item>
+          <ion-item routerLink="/layout/usuarios" routerDirection="root">
+            <ion-icon name="person-outline" slot="start"></ion-icon>
+            <ion-label>Usuarios</ion-label>
+          </ion-item>
+          <ion-item routerLink="/layout/ubicaciones" routerDirection="root">
+            <ion-icon name="location-outline" slot="start"></ion-icon>
+            <ion-label>Ubicaciones</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+    </ion-content>
+  </ion-menu>
+
+  <ion-router-outlet id="main-content"></ion-router-outlet>
+</ion-split-pane>
+
+<!-- Botón hamburguesa visible solo en móvil -->
+<ion-menu-button autoHide="false" class="menu-button"></ion-menu-button>

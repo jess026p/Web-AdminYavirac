@@ -1,0 +1,79 @@
+/* Fondo degradado */
+.fondo-personalizado {
+  --background: linear-gradient(to bottom, rgb(177, 197, 237), #03266e);
+  height: 100%;
+}
+
+/* Tarjeta con efecto glass más alta */
+.panel-admin-glass {
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20px;
+  box-shadow: 0 8px 8px rgb(101, 96, 96);
+  padding: 24px;
+  min-height: 580px; /* ↑ MÁS ALTA */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Cabecera con título y buscador */
+.cabecera-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.titulo-admin {
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+}
+
+.buscador {
+  --background: #ffffff;
+  --color: #000;
+  --placeholder-color: #f6f3f3;
+  --icon-color: #151515;
+  width: 260px;
+  height: 40px;
+  font-size: 14px;
+  --border-radius: 12px;
+  border-radius: 12px;
+  padding-inline-start: 8px;
+}
+
+/* Estadísticas */
+.box {
+  border-radius: 10px;
+  padding: 10px;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  font-size: 14px;
+}
+.box-azul    { background-color: #1565c0; }
+.box-verde   { background-color: #2e7d32; }
+.box-rojo    { background-color: #b71c1c; }
+
+ion-badge {
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+ion-button[color="medium"] {
+  --background: #424242;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+
+
+
+
+
+

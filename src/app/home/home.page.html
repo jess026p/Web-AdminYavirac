@@ -1,0 +1,69 @@
+
+<ion-content class="fondo-personalizado">
+  <div class="ion-padding">
+    <ion-card class="panel-admin-glass">
+      <ion-card-content>
+
+        <!-- Encabezado con título a la izquierda y buscador a la derecha -->
+        <div class="cabecera-admin">
+          <h2 class="titulo-admin">Administrador</h2>
+          <ion-searchbar
+            placeholder="Buscar usuarios"
+            [(ngModel)]="busqueda"
+            (ionInput)="buscarUsuario()"
+            class="buscador"
+          ></ion-searchbar>
+        </div>
+
+        <!-- Panel del usuario -->
+        <div class="info-usuario">
+          <h3>Usuario: {{ usuario.nombre }}</h3>
+          <ion-grid>
+            <ion-row>
+              <ion-col>
+                <div class="box box-azul">
+                  Días laborados en abril: {{ usuario.diasLaborados }}
+                </div>
+              </ion-col>
+              <ion-col>
+                <div class="box box-verde">
+                  Faltas sin justificación: {{ usuario.faltas }}
+                </div>
+              </ion-col>
+              <ion-col>
+                <div class="box box-rojo">
+                  Atrasos: {{ usuario.atrasos }}
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <ion-grid class="ion-margin-top">
+            <ion-row class="ion-text-center">
+              <ion-col><strong>Estado</strong></ion-col>
+              <ion-col><strong>Entrada</strong></ion-col>
+              <ion-col><strong>Salida</strong></ion-col>
+              <ion-col><strong>Mapa</strong></ion-col>
+            </ion-row>
+
+            <ion-row *ngFor="let registro of usuario.registros" class="ion-text-center">
+              <ion-col>
+                <ion-badge color="success">{{ registro.estado }}</ion-badge>
+              </ion-col>
+              <ion-col>{{ registro.entrada }}</ion-col>
+              <ion-col>{{ registro.salida || '-' }}</ion-col>
+              <ion-col>
+                <ion-icon name="location-outline" size="large"></ion-icon>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <ion-button expand="block" fill="solid" color="medium">
+            Ver Historial de registro
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+

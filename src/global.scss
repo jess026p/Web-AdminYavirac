@@ -1,0 +1,87 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+// Estilos para arreglar los iconos
+ion-icon {
+  pointer-events: none;
+}
+
+// Estilos para modales de formularios
+.modal-formulario, .usuario-modal {
+  --backdrop-opacity: 0.7;
+  --height: auto;
+  --max-height: 90%;
+  --border-radius: 12px;
+  
+  ion-header ion-toolbar {
+    --border-width: 0;
+  }
+
+  ion-content {
+    --padding: 12px;
+  }
+  
+  // Forzar que el contenido esté centrado
+  &::part(content) {
+    margin: auto;
+    overflow-y: auto;
+  }
+}
+
+// Mejorar las listas de selección en los modales
+ion-select {
+  --padding-start: 10px;
+  --padding-end: 10px;
+}
+
+ion-select-option {
+  font-size: 14px;
+}
+
+// Asegurar que los botones de texto en modales sean más visibles
+ion-button[fill="clear"] {
+  --color: var(--ion-color-primary);
+}
+
+// Ajustar tamaño de los modales en dispositivos más pequeños
+@media (max-width: 576px) {
+  .usuario-modal {
+    --height: auto;
+    --width: 90%;
+  }
+}
