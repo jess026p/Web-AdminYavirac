@@ -1,75 +1,43 @@
+:host {
+  display: block;
+  background: transparent;
+}
+
 ion-content {
-  --background: #f8f8f8;
+  --background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* Estilo de la tarjeta del formulario */
+form {
+  width: 100%;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  margin: auto;
 }
 
 ion-list {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px;
-  max-width: 100%;
-  overflow: hidden;
+  background: transparent;
+  padding: 0;
 }
 
 ion-item {
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --inner-padding-end: 16px;
-  --min-height: 48px; /* Reducir altura de los elementos */
+  --background: transparent;
+  margin-bottom: 12px;
+  border-radius: 8px;
 }
 
 ion-label {
-  font-weight: 500;
-  font-size: 14px;
-}
-
-ion-input, ion-select {
-  font-size: 14px;
+  font-weight: 600;
 }
 
 ion-button {
-  --border-radius: 6px;
-  margin: 8px 0;
-  height: 40px;
-  font-size: 14px;
-}
-
-ion-select {
-  max-width: 100%;
-  width: 100%;
-}
-
-.error-message {
-  color: var(--ion-color-danger);
-  font-size: 0.8rem;
-  margin-left: 16px;
-}
-
-.form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 10px;
-}
-
-// Para aplicar centrado también en el componente
-:host {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-// Para pantallas más grandes, hacer el formulario más compacto
-@media (min-width: 768px) {
-  ion-content {
-    --padding-top: 16px;
-    --padding-bottom: 16px;
-    --padding-start: 10%;
-    --padding-end: 10%;
-  }
-  
-  ion-list {
-    margin: 0 auto;
-    max-width: 450px;
-  }
+  margin-top: 12px;
+  --border-radius: 10px;
 }

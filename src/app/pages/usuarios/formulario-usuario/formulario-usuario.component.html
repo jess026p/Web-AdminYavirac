@@ -2,8 +2,8 @@
   <ion-toolbar color="primary">
     <ion-title>{{ editMode ? 'Editar' : 'Nuevo' }} Usuario</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="cancel()">
-        <ion-icon name="close"></ion-icon>
+      <ion-button fill="clear" (click)="cancel()">
+        <img src="assets/imagenes/cerrar.png" alt="Cerrar" style="width: 20px; height: 20px;" />
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -14,7 +14,7 @@
     <ion-list>
       <ion-item lines="full">
         <ion-label position="stacked">Nombre de usuario*</ion-label>
-        <ion-input formControlName="username" type="text" placeholder="Ingrese nombre de usuario"></ion-input>
+        <ion-input formControlName="username" type="text" placeholder="Ingrese nombre de usuario" autocomplete="off"></ion-input>
         <ion-note slot="error" *ngIf="userForm.get('username')?.touched && userForm.get('username')?.hasError('required')">
           El nombre de usuario es obligatorio
         </ion-note>
@@ -57,14 +57,25 @@
 
       <ion-item lines="full" *ngIf="!editMode">
         <ion-label position="stacked">Contraseña*</ion-label>
-        <ion-input formControlName="password" type="password" placeholder="Mínimo 6 caracteres"></ion-input>
+        <ion-input formControlName="password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password"></ion-input>
         <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('required')">
           La contraseña es obligatoria
         </ion-note>
         <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('minlength')">
-          La contraseña debe tener al menos 6 caracteres
+          La contraseña debe tener al menos 8 caracteres
         </ion-note>
       </ion-item>
+      <ion-item lines="full">
+        <ion-label position="stacked">Tipo de Identificación*</ion-label>
+        <ion-select formControlName="identificationType" placeholder="Seleccione tipo">
+          <ion-select-option value="CEDULA">Cédula</ion-select-option>
+          <ion-select-option value="RUC">RUC</ion-select-option>
+        </ion-select>
+        <ion-note slot="error" *ngIf="userForm.get('identificationType')?.touched && userForm.get('identificationType')?.hasError('required')">
+          El tipo de identificación es obligatorio
+        </ion-note>
+      </ion-item>
+
 
       <ion-item lines="none">
         <ion-label position="stacked">Roles*</ion-label>
@@ -75,6 +86,11 @@
           Debe seleccionar al menos un rol
         </ion-note>
       </ion-item>
+      <ion-item lines="full">
+        <ion-label>¿Contraseña cambiada?</ion-label>
+        <ion-toggle formControlName="passwordChanged"></ion-toggle>
+      </ion-item>
+
     </ion-list>
 
     <div class="ion-padding ion-text-center">
