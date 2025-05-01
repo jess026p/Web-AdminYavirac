@@ -1,0 +1,192 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, throwError, tap, timeout, map, of } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface Shift {
+  id?: string;
+  name: string;
+  description?: string;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+export interface Horario {
+  id?: string;
+  days: string[];
+  start_time: string;
+  end_time: string;
+  employee_id: string;
+}
+
+export interface Jornada {
+  id: string;
+  nombre: string;
+  horaEntrada: string;
+  horaSalida: string;
+  descripcion: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ShiftsService {
+  private apiUrl = `${environment.apiUrl}/shifts`;
+  private usarDatosLocales = true; // Temporalmente usar datos locales
+
+  private turnosLocales: Shift[] = [
+    { 
+      id: '1', 
+      name: 'Turno Mañana',
+      description: 'Turno de la mañana (8:00 AM - 5:00 PM)'
+    },
+    { 
+      id: '2', 
+      name: 'Turno Tarde',
+      description: 'Turno de la tarde (2:00 PM - 10:00 PM)'
+    },
+    { 
+      id: '3', 
+      name: 'Turno Noche',
+      description: 'Turno de la noche (10:00 PM - 6:00 AM)'
+    }
+  ];
+
+  jornadasPredefinidas: Jornada[] = [
+    {
+      id: '1',
+      nombre: 'Jornada Matutina',
+      horaEntrada: '07:00',
+      horaSalida: '15:00',
+      descripcion: 'Horario de mañana'
+    },
+    {
+      id: '2',
+      nombre: 'Jornada Vespertina',
+      horaEntrada: '13:00',
+      horaSalida: '21:00',
+      descripcion: 'Horario de tarde'
+    },
+    {
+      id: '3',
+      nombre: 'Jornada Nocturna',
+      horaEntrada: '21:00',
+      horaSalida: '07:00',
+      descripcion: 'Horario de noche'
+    },
+    {
+      id: '4',
+      nombre: 'Media Jornada Mañana',
+      horaEntrada: '08:00',
+      horaSalida: '12:00',
+      descripcion: 'Medio tiempo mañana'
+    },
+    {
+      id: '5',
+      nombre: 'Media Jornada Tarde',
+      horaEntrada: '14:00',
+      horaSalida: '18:00',
+      descripcion: 'Medio tiempo tarde'
+    }
+  ];
+
+  constructor(private http: HttpClient) {}
+
+  private handleError(error: HttpErrorResponse) {
+    console.error('Error en la petición HTTP:', error);
+    let mensajeError = 'Error de conexión con el servidor.';
+
+    if (error.status === 0) {
+      mensajeError = 'No se puede conectar al servidor.';
+    } else if (error.status === 404) {
+      mensajeError = 'Endpoint no encontrado.';
+    } else if (error.status === 500) {
+      mensajeError = 'Error interno del servidor.';
+    } else if (error.status === 401) {
+      mensajeError = 'No autorizado. Vuelva a iniciar sesión.';
+    }
+
+    return throwError(() => new Error(mensajeError));
+  }
+
+  obtenerTurnos(): Observable<Shift[]> {
+    if (this.usarDatosLocales) {
+      console.log('Usando datos locales para turnos');
+      return of(this.turnosLocales);
+    }
+
+    return this.http.get<any>(this.apiUrl)
+      .pipe(
+        timeout(10000),
+        map(res => res.data || res),
+        catchError(this.handleError)
+      );
+  }
+
+  obtenerTurnoPorId(id: string): Observable<Shift> {
+    if (this.usarDatosLocales) {
+      const turno = this.turnosLocales.find(t => t.id === id);
+      if (turno) {
+        return of(turno);
+      }
+      return throwError(() => new Error('Turno no encontrado'));
+    }
+
+    if (!id) {
+      return throwError(() => new Error('No se puede obtener un turno sin ID'));
+    }
+
+    return this.http.get<any>(`${this.apiUrl}/${id}`)
+      .pipe(
+        timeout(10000),
+        map(res => res.data || res),
+        catchError(this.handleError)
+      );
+  }
+
+  crearTurno(turno: Shift): Observable<Shift> {
+    return this.http.post<Shift>(this.apiUrl, turno)
+      .pipe(
+        timeout(10000),
+        tap(response => console.log('Turno creado:', response)),
+        catchError(this.handleError)
+      );
+  }
+
+  actualizarTurno(turno: Shift): Observable<Shift> {
+    if (!turno.id) {
+      return throwError(() => new Error('ID de turno requerido para actualizar'));
+    }
+
+    return this.http.put<Shift>(`${this.apiUrl}/${turno.id}`, turno)
+      .pipe(
+        timeout(10000),
+        tap(response => console.log('Turno actualizado:', response)),
+        catchError(this.handleError)
+      );
+  }
+
+  eliminarTurno(id: string): Observable<any> {
+    if (!id) {
+      return throwError(() => new Error('No se puede eliminar un turno sin ID'));
+    }
+
+    return this.http.delete(`${this.apiUrl}/${id}`)
+      .pipe(
+        timeout(10000),
+        catchError(this.handleError)
+      );
+  }
+
+  guardarHorario(horario: Horario): Observable<Horario> {
+    return this.http.post<Horario>(this.apiUrl, horario);
+  }
+
+  obtenerHorarios(employeeId: string): Observable<Horario[]> {
+    return this.http.get<Horario[]>(`${this.apiUrl}?employee_id=${employeeId}`);
+  }
+
+  eliminarHorario(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+} 

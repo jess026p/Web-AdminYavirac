@@ -1,0 +1,45 @@
+// Estilos para la página de lista de ubicaciones 
+
+ion-content {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+}
+
+ion-searchbar {
+  margin-bottom: 16px;
+}
+
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 8px;
+  border-radius: 8px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 4px 0;
+    color: var(--ion-color-medium);
+  }
+}
+
+ion-chip {
+  margin: 4px;
+}
+
+.no-results {
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: 32px 16px;
+}
+
+ion-buttons[slot="end"] {
+  ion-button {
+    margin-left: 8px;
+  }
+} 

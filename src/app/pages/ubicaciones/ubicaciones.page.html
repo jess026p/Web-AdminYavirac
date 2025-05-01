@@ -1,62 +1,159 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Asignar Ubicación</ion-title>
+    <ion-title>Gestión de Ubicaciones y Horarios</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title>Filtrar por Provincia y Ciudad</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-select placeholder="Seleccionar provincia" [(ngModel)]="provinciaSeleccionada" (ionChange)="onProvinciaChange()">
-        <ion-select-option *ngFor="let provincia of provincias" [value]="provincia.nombre">
-          {{ provincia.nombre }}
-        </ion-select-option>
-      </ion-select>
-
-      <ion-select placeholder="Seleccionar ciudad" [(ngModel)]="ciudadSeleccionada" [disabled]="!provinciaSeleccionada">
-        <ion-select-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad">
-          {{ ciudad }}
-        </ion-select-option>
-      </ion-select>
-
-      <ion-button expand="block" (click)="centrarEnCiudad()" [disabled]="!ciudadSeleccionada">
-        Buscar ciudad en el mapa
-      </ion-button>
-    </ion-card-content>
-  </ion-card>
-
   <ion-card>
     <ion-card-header>
       <ion-card-title>Seleccionar Usuario</ion-card-title>
     </ion-card-header>
     <ion-card-content>
-      <ion-select placeholder="Seleccionar usuario" [(ngModel)]="usuarioSeleccionado">
-        <ion-select-option *ngFor="let user of usuarios" [value]="user.id">
-          {{ user.nombre }}
-        </ion-select-option>
-      </ion-select>
+      <ion-list>
+        <ion-radio-group [(ngModel)]="usuarioSeleccionado">
+          <ion-item *ngFor="let usuario of usuarios">
+            <ion-avatar slot="start">
+              <img [src]="usuario.avatar || 'assets/avatar-default.png'" alt="avatar">
+            </ion-avatar>
+            <ion-label>
+              <h2>{{usuario.name}} {{usuario.lastname}}</h2>
+              <p>{{usuario.email}}</p>
+            </ion-label>
+            <ion-radio [value]="usuario.id" slot="end"></ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+
+      <ion-button expand="block" (click)="siguientePaso()" [disabled]="!usuarioSeleccionado">
+        Siguiente
+        <ion-icon name="arrow-forward" slot="end"></ion-icon>
+      </ion-button>
     </ion-card-content>
   </ion-card>
 
-  <div id="map" style="height: 300px; width: 100%; border-radius: 10px; margin-top: 10px;"></div>
-
-  <ion-card>
+  <ion-card *ngIf="mostrarMapaYUbicacion">
     <ion-card-header>
-      <ion-card-title>Ubicación seleccionada</ion-card-title>
+      <ion-card-title>Seleccionar Ubicación</ion-card-title>
     </ion-card-header>
     <ion-card-content>
-      <p><strong>Latitud:</strong> {{ lat }}</p>
-      <p><strong>Longitud:</strong> {{ lon }}</p>
-      <p><strong>Dirección:</strong> {{ direccion }}</p>
+      <ion-item>
+        <ion-label position="stacked">Buscar dirección</ion-label>
+        <ion-input [(ngModel)]="busquedaDireccion" (keyup.enter)="buscarDireccion()" placeholder="Ej: Av. Amazonas, Quito"></ion-input>
+        <ion-button fill="clear" slot="end" (click)="buscarDireccion()">
+          <ion-icon name="search"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <div class="map-wrapper">
+        <div id="map" class="map"></div>
+      </div>
+
+      <ion-item *ngIf="direccion" lines="none" class="location-info">
+        <ion-label>
+          <h3>Dirección seleccionada</h3>
+          <p>{{direccion}}</p>
+        </ion-label>
+      </ion-item>
+
+      <ion-button expand="block" (click)="crearUbicacion()" [disabled]="!direccion">
+        <ion-spinner *ngIf="cargando" name="crescent"></ion-spinner>
+        <span *ngIf="!cargando">Crear Ubicación</span>
+      </ion-button>
     </ion-card-content>
   </ion-card>
 
-  <ion-button expand="block" color="primary" (click)="guardarUbicacion()">
-    Guardar ubicación para el usuario
-  </ion-button>
+  <ion-card *ngIf="mostrarMapaYUbicacion">
+    <ion-card-header>
+      <ion-card-title>Asignar Horarios</ion-card-title>
+      <ion-card-subtitle>Seleccione los días y la jornada laboral</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label position="stacked">Días</ion-label>
+          <ion-select [(ngModel)]="diasSeleccionados" multiple="true">
+            <ion-select-option value="1">Lunes</ion-select-option>
+            <ion-select-option value="2">Martes</ion-select-option>
+            <ion-select-option value="3">Miércoles</ion-select-option>
+            <ion-select-option value="4">Jueves</ion-select-option>
+            <ion-select-option value="5">Viernes</ion-select-option>
+            <ion-select-option value="6">Sábado</ion-select-option>
+            <ion-select-option value="0">Domingo</ion-select-option>
+          </ion-select>
+        </ion-item>
 
+        <ion-item>
+          <ion-label position="stacked">Jornada Laboral</ion-label>
+          <ion-select [(ngModel)]="jornadaSeleccionada" interface="action-sheet">
+            <ion-select-option *ngFor="let jornada of jornadasDisponibles" [value]="jornada.id">
+              <ion-text>
+                <h3>{{jornada.nombre}}</h3>
+                <p>{{jornada.horaEntrada}} - {{jornada.horaSalida}}</p>
+                <p class="ion-text-wrap">{{jornada.descripcion}}</p>
+              </ion-text>
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-button expand="block" (click)="agregarHorario()" [disabled]="!puedeAgregarHorario()" class="ion-margin-top">
+          <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+          Agregar Horario
+        </ion-button>
+      </ion-list>
+
+      <ion-list *ngIf="horarios.length > 0">
+        <ion-list-header>
+          <ion-label>Horarios Asignados</ion-label>
+        </ion-list-header>
+        <ion-item-sliding *ngFor="let horario of horarios">
+          <ion-item>
+            <ion-label>
+              <h2>{{obtenerNombresDias(horario.days)}}</h2>
+              <h3>{{obtenerNombreJornada(horario.jornada_id)}}</h3>
+              <p>{{obtenerHorarioJornada(horario.jornada_id)}}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="eliminarHorario(horario)">
+              <ion-icon name="trash" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="ubicaciones.length > 0">
+    <ion-card-header>
+      <ion-card-title>Ubicaciones Asignadas</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item-sliding *ngFor="let ubicacion of ubicaciones">
+          <ion-item>
+            <ion-label>
+              <h2>{{ ubicacion.name }}</h2>
+              <p>Lat: {{ ubicacion.latitude }} | Long: {{ ubicacion.longitude }}</p>
+              <p>Radio: {{ ubicacion.radius }}m</p>
+            </ion-label>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="eliminarUbicacion(ubicacion.id!)">
+              <ion-icon name="trash"></ion-icon>
+              Eliminar
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-button expand="block" color="success" (click)="guardarConfiguracion()" 
+    [disabled]="!puedeGuardarConfiguracion()" class="guardar-button">
+    <ion-icon name="save" slot="start"></ion-icon>
+    Guardar Configuración
+  </ion-button>
 </ion-content>
+
+<ion-loading [isOpen]="cargando" message="Por favor espere..."></ion-loading>

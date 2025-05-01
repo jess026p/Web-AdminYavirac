@@ -26,6 +26,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'lista-ubicaciones',
+        loadComponent: () =>
+          import('./pages/ubicaciones/lista-ubicaciones.page').then(
+            (m) => m.ListaUbicacionesPage
+          ),
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',

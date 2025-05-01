@@ -1,0 +1,55 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Gestión de Horarios</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="horarioForm" (ngSubmit)="agregarHorario()">
+    <ion-item>
+      <ion-label position="stacked">Hora de Inicio</ion-label>
+      <ion-input type="time" formControlName="horaInicio"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Hora de Fin</ion-label>
+      <ion-input type="time" formControlName="horaFin"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Días de la Semana</ion-label>
+      <ion-select multiple="true" formControlName="dias">
+        <ion-select-option *ngFor="let dia of diasSemana" [value]="dia.valor">
+          {{ dia.nombre }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Radio (metros)</ion-label>
+      <ion-input type="number" formControlName="radio"></ion-input>
+    </ion-item>
+
+    <ion-button expand="block" type="submit" [disabled]="!horarioForm.valid">
+      Agregar Horario
+    </ion-button>
+  </form>
+
+  <ion-list>
+    <ion-item-sliding *ngFor="let horario of horarios">
+      <ion-item>
+        <ion-label>
+          <h2>Horario: {{ horario.horaInicio }} - {{ horario.horaFin }}</h2>
+          <p>Días: {{ horario.dias.join(', ') }}</p>
+          <p>Radio: {{ horario.radio }}m</p>
+        </ion-label>
+      </ion-item>
+      <ion-item-options side="end">
+        <ion-item-option color="danger" (click)="eliminarHorario(horario.id)">
+          <ion-icon name="trash"></ion-icon>
+          Eliminar
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+</ion-content> 

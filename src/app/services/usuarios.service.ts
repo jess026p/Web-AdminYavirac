@@ -26,6 +26,7 @@ export interface Usuario {
   identification: string;
   roles: Role[];
   passwordChanged?: boolean;
+  avatar?: string;
 }
 
 @Injectable({

@@ -1,0 +1,60 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Lista de Ubicaciones</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/layout/ubicaciones"></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-searchbar
+    placeholder="Buscar por nombre"
+    [(ngModel)]="terminoBusqueda"
+    (ionInput)="aplicarFiltros()">
+  </ion-searchbar>
+
+  <ion-loading [isOpen]="cargando" message="Cargando ubicaciones..."></ion-loading>
+
+  <ion-card *ngIf="ubicacionesFiltradas.length === 0">
+    <ion-card-content>
+      <p class="ion-text-center">No se encontraron ubicaciones.</p>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-list>
+    <ion-item *ngFor="let ubicacion of ubicacionesFiltradas">
+      <ion-label>
+        <h2>{{ ubicacion.name }}</h2>
+        <p><small>Lat: {{ ubicacion.latitude }}, Lon: {{ ubicacion.longitude }}</small></p>
+        <p><small>Radio: {{ ubicacion.radius }} metros</small></p>
+        
+        <div *ngIf="ubicacion.schedules && ubicacion.schedules.length > 0">
+          <p><strong>Horarios:</strong></p>
+          <ion-chip *ngFor="let schedule of ubicacion.schedules" color="primary">
+            {{ schedule.day_of_week }}: {{ schedule.work_start_time }} - {{ schedule.work_end_time }}
+          </ion-chip>
+        </div>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button (click)="verEnMapa(ubicacion)" color="primary">
+          <ion-icon name="location-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button (click)="editarUbicacion(ubicacion.id!)" color="warning">
+          <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button (click)="eliminarUbicacion(ubicacion.id!)" color="danger">
+          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <ion-toast
+    [isOpen]="mostrarToast"
+    [message]="mensajeToast"
+    [duration]="3000"
+    [color]="colorToast"
+    (didDismiss)="mostrarToast = false">
+  </ion-toast>
+</ion-content> 
