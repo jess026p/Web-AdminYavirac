@@ -18,19 +18,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/usuarios/usuarios.page').then((m) => m.UsuariosPage),
       },
+     
       {
-        path: 'ubicaciones',
+        path: 'horarios',
         loadComponent: () =>
-          import('./pages/ubicaciones/ubicaciones.page').then(
-            (m) => m.UbicacionesPage
-          ),
+          import('./pages/horarios/horarios.page').then((m) => m.HorariosPage),
       },
+      
       {
-        path: 'lista-ubicaciones',
+        path: 'roles',
         loadComponent: () =>
-          import('./pages/ubicaciones/lista-ubicaciones.page').then(
-            (m) => m.ListaUbicacionesPage
-          ),
+          import('./pages/roles/roles.page').then((m) => m.RolesPage),
       },
       {
         path: '',
@@ -44,13 +42,13 @@ export const routes: Routes = [
     redirectTo: 'login', // Cambiamos el redirect a login en lugar de layout
     pathMatch: 'full',
   },
-  {
-    path: 'ubicacion',
-    loadComponent: () => import('./ubicacion/ubicacion.page').then( m => m.UbicacionPage),
-    canActivate: [authGuard], // Protegemos la ruta con el guardia
-  },
+
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then( m => m.LoginPage)
+  },
+  {
+    path: 'roles',
+    loadComponent: () => import('./pages/roles/roles.page').then( m => m.RolesPage)
   }
 ];

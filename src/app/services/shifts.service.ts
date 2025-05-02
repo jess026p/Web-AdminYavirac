@@ -13,10 +13,17 @@ export interface Shift {
 
 export interface Horario {
   id?: string;
-  days: string[];
-  start_time: string;
-  end_time: string;
-  employee_id: string;
+  dayOfWeek?: number;
+  employeeId: string;
+  hourStartedAt: number;
+  hourEndedAt: number;
+  minuteStartedAt: number;
+  minuteEndedAt: number;
+  minutesLunch: number;
+  minutesTolerance: number;
+  shiftType: string;
+  jornadaId: string;
+  days?: string[]; // Solo para uso en frontend
 }
 
 export interface Jornada {
@@ -31,8 +38,9 @@ export interface Jornada {
   providedIn: 'root'
 })
 export class ShiftsService {
-  private apiUrl = `${environment.apiUrl}/shifts`;
-  private usarDatosLocales = true; // Temporalmente usar datos locales
+  private sitesUrl = `${environment.apiUrl}/v1/sites`;
+  private schedulesUrl = `${environment.apiUrl}/v1/schedules`;
+  private usarDatosLocales = false; // Cambiamos a false para usar el backend real
 
   private turnosLocales: Shift[] = [
     { 
@@ -115,7 +123,7 @@ export class ShiftsService {
       return of(this.turnosLocales);
     }
 
-    return this.http.get<any>(this.apiUrl)
+    return this.http.get<any>(this.sitesUrl)
       .pipe(
         timeout(10000),
         map(res => res.data || res),
@@ -136,7 +144,7 @@ export class ShiftsService {
       return throwError(() => new Error('No se puede obtener un turno sin ID'));
     }
 
-    return this.http.get<any>(`${this.apiUrl}/${id}`)
+    return this.http.get<any>(`${this.sitesUrl}/${id}`)
       .pipe(
         timeout(10000),
         map(res => res.data || res),
@@ -145,7 +153,7 @@ export class ShiftsService {
   }
 
   crearTurno(turno: Shift): Observable<Shift> {
-    return this.http.post<Shift>(this.apiUrl, turno)
+    return this.http.post<Shift>(this.sitesUrl, turno)
       .pipe(
         timeout(10000),
         tap(response => console.log('Turno creado:', response)),
@@ -158,7 +166,7 @@ export class ShiftsService {
       return throwError(() => new Error('ID de turno requerido para actualizar'));
     }
 
-    return this.http.put<Shift>(`${this.apiUrl}/${turno.id}`, turno)
+    return this.http.put<Shift>(`${this.sitesUrl}/${turno.id}`, turno)
       .pipe(
         timeout(10000),
         tap(response => console.log('Turno actualizado:', response)),
@@ -171,7 +179,7 @@ export class ShiftsService {
       return throwError(() => new Error('No se puede eliminar un turno sin ID'));
     }
 
-    return this.http.delete(`${this.apiUrl}/${id}`)
+    return this.http.delete(`${this.sitesUrl}/${id}`)
       .pipe(
         timeout(10000),
         catchError(this.handleError)
@@ -179,14 +187,47 @@ export class ShiftsService {
   }
 
   guardarHorario(horario: Horario): Observable<Horario> {
-    return this.http.post<Horario>(this.apiUrl, horario);
+    return this.http.post<Horario>(this.schedulesUrl, horario).pipe(
+      timeout(10000),
+      tap(response => console.log('Horario guardado:', response)),
+      catchError(this.handleError)
+    );
   }
 
   obtenerHorarios(employeeId: string): Observable<Horario[]> {
-    return this.http.get<Horario[]>(`${this.apiUrl}?employee_id=${employeeId}`);
+    return this.http.get<Horario[]>(`${this.schedulesUrl}?employee_id=${employeeId}`).pipe(
+      timeout(10000),
+      catchError(this.handleError)
+    );
   }
 
   eliminarHorario(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.schedulesUrl}/${id}`).pipe(
+      timeout(10000),
+      catchError(this.handleError)
+    );
+  }
+
+  // Métodos para ubicaciones
+  guardarUbicacion(ubicacion: any): Observable<any> {
+    return this.http.post(this.sitesUrl, ubicacion).pipe(
+      timeout(10000),
+      tap(response => console.log('Ubicación guardada:', response)),
+      catchError(this.handleError)
+    );
+  }
+
+  obtenerUbicaciones(): Observable<any[]> {
+    return this.http.get<any[]>(this.sitesUrl).pipe(
+      timeout(10000),
+      catchError(this.handleError)
+    );
+  }
+
+  eliminarUbicacion(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.sitesUrl}/${id}`).pipe(
+      timeout(10000),
+      catchError(this.handleError)
+    );
   }
 } 

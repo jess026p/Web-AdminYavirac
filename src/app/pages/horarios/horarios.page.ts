@@ -1,0 +1,487 @@
+import { Component, OnInit } from '@angular/core';
+import { HorariosService, Horario } from '../../services/horarios.service';
+import { UsuariosService, Usuario } from '../../services/usuarios.service';
+import { UbicacionesService, Site } from '../../services/ubicaciones.service';
+import { IonicModule } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import Map from 'ol/Map';
+import View from 'ol/View';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
+import { fromLonLat } from 'ol/proj';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import VectorSource from 'ol/source/Vector';
+import VectorLayer from 'ol/layer/Vector';
+import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
+import { Circle as OlCircle } from 'ol/geom';
+
+@Component({
+  selector: 'app-horarios',
+  templateUrl: './horarios.page.html',
+  styleUrls: ['./horarios.page.scss'],
+  standalone: true,
+  imports: [IonicModule, CommonModule, FormsModule, ReactiveFormsModule]
+})
+export class HorariosPage implements OnInit {
+  horarios: Horario[] = [];
+
+  // Wizard paso a paso
+  paso: number = 1;
+
+  empleados: any[] = [];
+  empleadoSeleccionado: string = '';
+  empleadoNombre: string = '';
+  ubicaciones: any[] = [];
+  ubicacionSeleccionada: { lat: number, lng: number } | null = null;
+  ubicacionNombre: string = '';
+  jornadaSeleccionada: string = '';
+  diasSeleccionados: number[] = [];
+  fechaInicio: string = '';
+  fechaFin: string = '';
+  horaInicio: string = '';
+  horaFin: string = '';
+  horasMinimas: string = '';
+  repetirTurno: boolean = false;
+  diasRepetir: number[] = [];
+  fechaFinRepeticion: string = '';
+  nombreTurno: string = '';
+  horaAlmuerzoSalida: string = '';
+  horaAlmuerzoRegreso: string = '';
+  busquedaDireccion: string = '';
+  toleranciaInicio: number = 5; // Valor por defecto de 5 minutos
+  toleranciaFin: number = 5; // Valor por defecto de 5 minutos
+
+  asignaciones: any[] = [];
+  horariosAgregados: any[] = [];
+
+  diasSemana = [
+    { label: 'LU', value: 1 },
+    { label: 'MA', value: 2 },
+    { label: 'MI', value: 3 },
+    { label: 'JU', value: 4 },
+    { label: 'VI', value: 5 },
+    { label: 'SÁ', value: 6 },
+    { label: 'DO', value: 0 }
+  ];
+
+  jornadasDisponibles = [
+    { id: '1', nombre: 'Jornada Matutina', horaEntrada: '07:00', horaSalida: '15:00' },
+    { id: '2', nombre: 'Jornada Vespertina', horaEntrada: '13:00', horaSalida: '21:00' },
+    { id: '3', nombre: 'Jornada Nocturna', horaEntrada: '21:00', horaSalida: '07:00' }
+  ];
+
+  map: any;
+
+  horarioEditandoIndex: number | null = null;
+
+  mismaUbicacionParaTodos: boolean = false;
+  mostrarMapaUbicacion: boolean = false;
+  indiceHorarioUbicacion: number | null = null;
+
+  vectorSource: any;
+  vectorLayer: any;
+  marker: any;
+  circle: any;
+
+  radioUbicacion: number = 100;
+
+  constructor(
+    private horariosService: HorariosService,
+    private usuariosService: UsuariosService,
+    private ubicacionesService: UbicacionesService
+  ) {}
+
+  ngOnInit() {
+    this.cargarHorarios();
+    this.usuariosService.obtenerUsuarios().subscribe((usuarios: any[]) => {
+      // Marcar usuarios con o sin horario asignado
+      this.empleados = usuarios.map(u => {
+        const id = u.id || u._id;
+        // Buscar en asignaciones y horarios agregados
+        const tieneHorario = this.asignaciones.some(a => a.empleadoId === id) || this.horariosAgregados.some(h => h.empleadoId === id);
+        return {
+          id,
+          nombre: u.nombre || u.name,
+          apellido: u.apellido || u.lastname,
+          correo: u.correo || u.email,
+          sinHorario: !tieneHorario
+        };
+      });
+    });
+    this.ubicacionesService.obtenerUbicaciones().subscribe((ubicaciones: any[]) => {
+      this.ubicaciones = ubicaciones.map(u => ({
+        id: u.id || u._id,
+        nombre: u.nombre || u.name
+      }));
+    });
+  }
+
+  siguientePaso() {
+    if (this.paso === 1) {
+      // Guardar nombre del empleado seleccionado
+      const emp = this.empleados.find(e => e.id === this.empleadoSeleccionado);
+      this.empleadoNombre = emp ? `${emp.nombre} ${emp.apellido}` : '';
+    }
+    if (this.paso === 2) {
+      setTimeout(() => this.inicializarMapa(), 300);
+    }
+    this.paso++;
+  }
+
+  anteriorPaso() {
+    this.paso--;
+  }
+
+  guardarAsignacion() {
+    // Validar que todos los horarios tengan ubicación
+    if (!this.horariosAgregados.every(h => h.ubicacionNombre && h.ubicacionSeleccionada)) {
+      alert('Falta asignar ubicación a uno o más horarios.');
+      return;
+    }
+    // Aquí puedes enviar cada horario con su ubicación al backend
+    this.horariosAgregados.forEach(horario => {
+      const data = {
+        empleadoId: this.empleadoSeleccionado,
+        ...horario
+      };
+      this.horariosService.createHorario(data).subscribe({
+        next: () => {
+          // Puedes agregar lógica para mostrar éxito o limpiar el formulario
+        },
+        error: (err) => {
+          alert('Error al guardar la asignación: ' + (err?.message || err));
+        }
+      });
+    });
+    // Limpiar después de guardar
+    this.horariosAgregados = [];
+    this.paso = 1;
+    alert('Asignaciones guardadas correctamente.');
+  }
+
+  eliminarAsignacion(index: number) {
+    this.asignaciones.splice(index, 1);
+  }
+
+  limpiarWizard() {
+    this.empleadoSeleccionado = '';
+    this.empleadoNombre = '';
+    this.jornadaSeleccionada = '';
+    this.diasSeleccionados = [];
+    this.horaInicio = '';
+    this.horaFin = '';
+    this.ubicacionSeleccionada = null;
+    this.ubicacionNombre = '';
+  }
+
+  cargarHorarios() {
+    this.horariosService.getHorarios().subscribe(data => this.horarios = data);
+  }
+
+  obtenerNombreJornada(jornadaId: string): string {
+    const jornada = this.jornadasDisponibles.find(j => j.id === jornadaId);
+    return jornada ? jornada.nombre : '';
+  }
+
+  toggleDiaRepetir(dia: number) {
+    if (this.diasRepetir.includes(dia)) {
+      this.diasRepetir = this.diasRepetir.filter(d => d !== dia);
+    } else {
+      this.diasRepetir.push(dia);
+    }
+  }
+
+  cancelar() {
+    this.empleadoSeleccionado = '';
+    this.ubicacionSeleccionada = null;
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.horaInicio = '';
+    this.horaFin = '';
+    this.horasMinimas = '';
+    this.repetirTurno = false;
+    this.diasRepetir = [];
+    this.fechaFinRepeticion = '';
+  }
+
+  editarHorarioAgregado(i: number) {
+    const horario = this.horariosAgregados[i];
+    this.nombreTurno = horario.nombreTurno;
+    this.diasSeleccionados = [...horario.dias];
+    this.horaInicio = horario.horaInicio;
+    this.horaFin = horario.horaFin;
+    this.fechaInicio = horario.fechaInicio;
+    this.fechaFin = horario.fechaFin;
+    this.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
+    this.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
+    this.repetirTurno = horario.dias && horario.dias.length > 0;
+    this.horarioEditandoIndex = i;
+  }
+
+  guardarHorario() {
+    if (!this.horaInicio || !this.horaFin || (this.repetirTurno && (this.diasSeleccionados.length === 0 || !this.fechaFinRepeticion))) {
+      alert('Completa todos los campos antes de guardar el horario.');
+      return;
+    }
+    const horario = {
+      nombreTurno: this.nombreTurno,
+      dias: this.repetirTurno ? [...this.diasSeleccionados] : [],
+      horaInicio: this.horaInicio,
+      horaFin: this.horaFin,
+      fechaInicio: this.fechaInicio,
+      fechaFin: this.fechaFin,
+      horaAlmuerzoSalida: this.horaAlmuerzoSalida,
+      horaAlmuerzoRegreso: this.horaAlmuerzoRegreso,
+      toleranciaInicioAntes: this.toleranciaInicio,
+      toleranciaInicioDespues: this.toleranciaInicio,
+      toleranciaFinDespues: this.toleranciaFin,
+      repetirTurno: this.repetirTurno,
+      fechaFinRepeticion: this.fechaFinRepeticion
+    };
+    if (this.horarioEditandoIndex !== null) {
+      this.horariosAgregados[this.horarioEditandoIndex] = horario;
+      this.horarioEditandoIndex = null;
+    } else {
+      this.horariosAgregados.push(horario);
+    }
+    this.limpiarFormularioHorario();
+  }
+
+  agregarNuevoHorario() {
+    this.limpiarFormularioHorario();
+    this.horarioEditandoIndex = null;
+  }
+
+  limpiarFormularioHorario() {
+    this.diasSeleccionados = [];
+    this.horaInicio = '';
+    this.horaFin = '';
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.repetirTurno = false;
+    this.nombreTurno = '';
+    this.horaAlmuerzoSalida = '';
+    this.horaAlmuerzoRegreso = '';
+    this.toleranciaInicio = 5;
+    this.toleranciaFin = 5;
+    this.fechaFinRepeticion = '';
+    this.horarioEditandoIndex = null;
+  }
+
+  eliminarHorarioAgregado(index: number) {
+    this.horariosAgregados.splice(index, 1);
+  }
+
+  obtenerNombresDias(dias: number[]): string {
+    const nombres = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SÁ'];
+    return dias.map(d => nombres[d]).join(', ');
+  }
+
+  inicializarMapa() {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+      console.error('Elemento del mapa no encontrado');
+      return;
+    }
+    // Limpiar mapa anterior si existe
+    if (this.map) {
+      this.map.setTarget(null);
+    }
+    this.vectorSource = new VectorSource();
+    this.vectorLayer = new VectorLayer({
+      source: this.vectorSource
+    });
+    this.map = new Map({
+      target: mapElement,
+      layers: [
+        new TileLayer({
+          source: new OSM(),
+        }),
+        this.vectorLayer
+      ],
+      view: new View({
+        center: fromLonLat([-78.5123274, -0.2201641]), // Quito por defecto
+        zoom: 15
+      })
+    });
+
+    // Función para actualizar el círculo
+    const actualizarCirculo = (lon: number, lat: number) => {
+      if (this.circle) {
+        this.vectorSource.removeFeature(this.circle);
+      }
+      this.circle = new Feature({
+        geometry: new OlCircle([lon, lat], this.radioUbicacion || 100)
+      });
+      this.circle.setStyle(new Style({
+        stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+        fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+      }));
+      this.vectorSource.addFeature(this.circle);
+    };
+
+    this.map.on('click', async (evt: any) => {
+      const coords = evt.coordinate;
+      const [lon, lat] = this.map.getCoordinateFromPixel(evt.pixel);
+      this.ubicacionSeleccionada = { lat, lng: lon };
+      this.vectorSource.clear();
+      // Marcador
+      this.marker = new Feature({
+        geometry: new Point([lon, lat])
+      });
+      this.marker.setStyle(new Style({
+        image: new Icon({
+          src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+          scale: 0.05
+        })
+      }));
+      this.vectorSource.addFeature(this.marker);
+      // Círculo de radio
+      actualizarCirculo(lon, lat);
+      // Geocodificación inversa para obtener la dirección textual
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await response.json();
+        if (data && data.display_name) {
+          this.ubicacionNombre = data.display_name;
+        } else {
+          this.ubicacionNombre = '';
+        }
+      } catch (error) {
+        this.ubicacionNombre = '';
+      }
+    });
+
+    // Observar cambios en el radio
+    const radioInput = document.querySelector('ion-input[name="radioUbicacion"]');
+    if (radioInput) {
+      radioInput.addEventListener('ionChange', (event: any) => {
+        if (this.ubicacionSeleccionada && this.marker) {
+          const [lon, lat] = this.marker.getGeometry().getCoordinates();
+          actualizarCirculo(lon, lat);
+        }
+      });
+    }
+
+    setTimeout(() => {
+      this.map.updateSize();
+    }, 200);
+  }
+
+  toggleDia(dia: number) {
+    const idx = this.diasSeleccionados.indexOf(dia);
+    if (idx > -1) {
+      this.diasSeleccionados.splice(idx, 1);
+    } else {
+      this.diasSeleccionados.push(dia);
+    }
+  }
+
+  eliminarHorario(id: string) {
+    if (!id) return;
+    this.horariosService.deleteHorario(id).subscribe(() => this.cargarHorarios());
+  }
+
+  limpiarFormulario() {
+    this.fechaInicio = '';
+    this.horaInicio = '';
+    this.fechaFin = '';
+    this.horaFin = '';
+    this.ubicacionSeleccionada = null;
+    this.ubicacionNombre = '';
+  }
+
+  async buscarDireccion() {
+    if (!this.busquedaDireccion) return;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.busquedaDireccion)}`
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lon = parseFloat(result.lon);
+        const lat = parseFloat(result.lat);
+        if (this.map) {
+          const coords = fromLonLat([lon, lat]);
+          this.map.getView().setCenter(coords);
+          this.map.getView().setZoom(16);
+        }
+      } else {
+        alert('Dirección no encontrada');
+      }
+    } catch (error) {
+      alert('Error al buscar la dirección');
+    }
+  }
+
+  get empleadosSeleccionados() {
+    return this.empleados && this.empleados.some(e => e.seleccionado);
+  }
+
+  get empleadoSeleccionadoObj() {
+    return this.empleados.find(e => e.id === this.empleadoSeleccionado);
+  }
+
+  abrirSelectorUbicacion(i: number) {
+    this.indiceHorarioUbicacion = i;
+    this.mostrarMapaUbicacion = true;
+    setTimeout(() => this.inicializarMapa(), 300);
+  }
+
+  cerrarSelectorUbicacion() {
+    this.mostrarMapaUbicacion = false;
+    this.indiceHorarioUbicacion = null;
+    this.ubicacionNombre = '';
+    this.ubicacionSeleccionada = null;
+    this.busquedaDireccion = '';
+  }
+
+  asignarUbicacionSeleccionada() {
+    if (this.indiceHorarioUbicacion === null) return;
+    const ubicacion = {
+      ubicacionNombre: this.ubicacionNombre,
+      ubicacionSeleccionada: this.ubicacionSeleccionada
+    };
+    if (this.mismaUbicacionParaTodos) {
+      this.horariosAgregados.forEach(h => {
+        h.ubicacionNombre = this.ubicacionNombre;
+        h.ubicacionSeleccionada = this.ubicacionSeleccionada;
+      });
+    } else {
+      this.horariosAgregados[this.indiceHorarioUbicacion].ubicacionNombre = this.ubicacionNombre;
+      this.horariosAgregados[this.indiceHorarioUbicacion].ubicacionSeleccionada = this.ubicacionSeleccionada;
+    }
+    this.cerrarSelectorUbicacion();
+  }
+
+  todasUbicacionesAsignadas() {
+    return this.horariosAgregados.every(h => h.ubicacionNombre && h.ubicacionSeleccionada);
+  }
+
+  onMismaUbicacionChange() {
+    if (this.mismaUbicacionParaTodos && this.horariosAgregados.length > 0) {
+      // Si ya hay una ubicación en el primer horario, propágala a los demás
+      const ref = this.horariosAgregados[0];
+      if (ref.ubicacionNombre && ref.ubicacionSeleccionada) {
+        this.horariosAgregados.forEach(h => {
+          h.ubicacionNombre = ref.ubicacionNombre;
+          h.ubicacionSeleccionada = ref.ubicacionSeleccionada;
+        });
+      }
+    }
+  }
+
+  // Métodos para refrescar la vista al seleccionar fechas en los calendarios flotantes
+  onFechaInicioChange() {
+    // No es necesario hacer nada, el ngModel ya actualiza la vista
+  }
+  onFechaFinChange() {
+    // No es necesario hacer nada, el ngModel ya actualiza la vista
+  }
+  onFechaFinRepeticionChange() {
+    // No es necesario hacer nada, el ngModel ya actualiza la vista
+  }
+} 

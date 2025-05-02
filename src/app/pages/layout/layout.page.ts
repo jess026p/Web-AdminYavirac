@@ -4,12 +4,14 @@ import {Router, RouterModule} from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { addIcons } from 'ionicons';
-import { homeOutline, personOutline, locationOutline } from 'ionicons/icons';
+import { homeOutline, personOutline, locationOutline, calendarOutline, shieldCheckmarkOutline } from 'ionicons/icons';
 
 addIcons({
   'home-outline': homeOutline,
   'person-outline': personOutline,
-  'location-outline': locationOutline
+  'location-outline': locationOutline,
+  'calendar-outline': calendarOutline,
+  'shield-checkmark-outline': shieldCheckmarkOutline
 });
 
 @Component({
