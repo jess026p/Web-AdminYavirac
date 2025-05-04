@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HorariosService, Horario } from '../../services/horarios.service';
 import { UsuariosService, Usuario } from '../../services/usuarios.service';
-import { UbicacionesService, Site } from '../../services/ubicaciones.service';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -30,9 +29,9 @@ export class HorariosPage implements OnInit {
   // Wizard paso a paso
   paso: number = 1;
 
-  empleados: any[] = [];
-  empleadoSeleccionado: string = '';
-  empleadoNombre: string = '';
+  usuarios: any[] = [];
+  usuarioSeleccionado: string = '';
+  usuarioSeleccionadoObj: any = null;
   ubicaciones: any[] = [];
   ubicacionSeleccionada: { lat: number, lng: number } | null = null;
   ubicacionNombre: string = '';
@@ -87,46 +86,47 @@ export class HorariosPage implements OnInit {
 
   radioUbicacion: number = 100;
 
+  ultimoUsuarioSeleccionado: string = '';
+  mostrarSelectorFecha: boolean = false;
+  mostrarSelectorFechaInicio: boolean = false;
+  mostrarSelectorFechaFin: boolean = false;
+  direccionRealSeleccionada: string = '';
+
   constructor(
     private horariosService: HorariosService,
     private usuariosService: UsuariosService,
-    private ubicacionesService: UbicacionesService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
+    this.cargarUsuarios();
     this.cargarHorarios();
-    this.usuariosService.obtenerUsuarios().subscribe((usuarios: any[]) => {
-      // Marcar usuarios con o sin horario asignado
-      this.empleados = usuarios.map(u => {
-        const id = u.id || u._id;
-        // Buscar en asignaciones y horarios agregados
-        const tieneHorario = this.asignaciones.some(a => a.empleadoId === id) || this.horariosAgregados.some(h => h.empleadoId === id);
-        return {
-          id,
-          nombre: u.nombre || u.name,
-          apellido: u.apellido || u.lastname,
-          correo: u.correo || u.email,
-          sinHorario: !tieneHorario
-        };
-      });
-    });
-    this.ubicacionesService.obtenerUbicaciones().subscribe((ubicaciones: any[]) => {
-      this.ubicaciones = ubicaciones.map(u => ({
-        id: u.id || u._id,
-        nombre: u.nombre || u.name
-      }));
+  }
+
+  cargarUsuarios() {
+    this.usuariosService.obtenerUsuarios().subscribe({
+      next: (usuarios: any[]) => {
+        this.usuarios = usuarios.map(u => ({
+          id: u.id,
+          name: u.name,
+          lastname: u.lastname,
+          email: u.email,
+          sinHorario: !u.horarios || u.horarios.length === 0
+        }));
+      },
+      error: () => {
+        this.usuarios = [];
+        alert('No autorizado o error al cargar usuarios. Por favor, inicia sesión nuevamente.');
+      }
     });
   }
 
   siguientePaso() {
-    if (this.paso === 1) {
-      // Guardar nombre del empleado seleccionado
-      const emp = this.empleados.find(e => e.id === this.empleadoSeleccionado);
-      this.empleadoNombre = emp ? `${emp.nombre} ${emp.apellido}` : '';
+    if (this.usuarioSeleccionado !== this.ultimoUsuarioSeleccionado) {
+      this.limpiarWizard();
+      this.ultimoUsuarioSeleccionado = this.usuarioSeleccionado;
     }
-    if (this.paso === 2) {
-      setTimeout(() => this.inicializarMapa(), 300);
-    }
+    this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
     this.paso++;
   }
 
@@ -140,21 +140,52 @@ export class HorariosPage implements OnInit {
       alert('Falta asignar ubicación a uno o más horarios.');
       return;
     }
-    // Aquí puedes enviar cada horario con su ubicación al backend
+    // Enviar cada horario con su ubicación al backend, incluyendo todos los campos del modelo
     this.horariosAgregados.forEach(horario => {
-      const data = {
-        empleadoId: this.empleadoSeleccionado,
-        ...horario
+      const data: any = {
+        userId: this.usuarioSeleccionado,
+        dias: Array.isArray(horario.dias) ? horario.dias.filter((d: number) => d >= 1 && d <= 7) : [],
+        horaInicio: horario.horaInicio,
+        horaFin: horario.horaFin
       };
+      if (horario.nombreTurno) data.nombreTurno = horario.nombreTurno;
+      if (horario.fechaInicio) data.fechaInicio = horario.fechaInicio;
+      if (horario.fechaFin) data.fechaFin = horario.fechaFin;
+      if (horario.horaAlmuerzoSalida) data.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
+      if (horario.horaAlmuerzoRegreso) data.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
+      if (horario.toleranciaInicioAntes) data.toleranciaInicioAntes = horario.toleranciaInicioAntes;
+      if (horario.toleranciaInicioDespues) data.toleranciaInicioDespues = horario.toleranciaInicioDespues;
+      if (horario.toleranciaFinDespues) data.toleranciaFinDespues = horario.toleranciaFinDespues;
+      if (typeof horario.repetirTurno !== 'undefined') data.repetirTurno = horario.repetirTurno;
+      if (horario.fechaFinRepeticion) data.fechaFinRepeticion = horario.fechaFinRepeticion;
+      if (horario.ubicacionNombre) data.ubicacionNombre = horario.ubicacionNombre;
+      if (horario.ubicacionSeleccionada) {
+        data.ubicacionLat = horario.ubicacionSeleccionada.lat;
+        data.ubicacionLng = horario.ubicacionSeleccionada.lng;
+      }
+      if (horario.radioUbicacion) data.radioUbicacion = horario.radioUbicacion;
+      // created_at, updated_at, deleted_at son manejados por el backend
+      console.log('Payload enviado al backend:', data);
       this.horariosService.createHorario(data).subscribe({
         next: () => {
           // Puedes agregar lógica para mostrar éxito o limpiar el formulario
         },
         error: (err) => {
-          alert('Error al guardar la asignación: ' + (err?.message || err));
+          let msg = 'Error al guardar la asignación';
+          if (err?.error?.message) {
+            msg += ': ' + err.error.message;
+          } else if (err?.message) {
+            msg += ': ' + err.message;
+          }
+          alert(msg);
         }
       });
     });
+    // Actualiza el array local de usuarios para reflejar la asignación en el frontend
+    const idx = this.usuarios.findIndex(u => u.id === this.usuarioSeleccionado);
+    if (idx !== -1) {
+      this.usuarios[idx].sinHorario = false;
+    }
     // Limpiar después de guardar
     this.horariosAgregados = [];
     this.paso = 1;
@@ -166,14 +197,28 @@ export class HorariosPage implements OnInit {
   }
 
   limpiarWizard() {
-    this.empleadoSeleccionado = '';
-    this.empleadoNombre = '';
+    this.horariosAgregados = [];
     this.jornadaSeleccionada = '';
     this.diasSeleccionados = [];
     this.horaInicio = '';
     this.horaFin = '';
     this.ubicacionSeleccionada = null;
     this.ubicacionNombre = '';
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.repetirTurno = false;
+    this.diasRepetir = [];
+    this.fechaFinRepeticion = '';
+    this.nombreTurno = '';
+    this.horaAlmuerzoSalida = '';
+    this.horaAlmuerzoRegreso = '';
+    this.toleranciaInicio = 5;
+    this.toleranciaFin = 5;
+    this.horarioEditandoIndex = null;
+    this.mismaUbicacionParaTodos = false;
+    this.mostrarMapaUbicacion = false;
+    this.indiceHorarioUbicacion = null;
+    this.radioUbicacion = 100;
   }
 
   cargarHorarios() {
@@ -194,7 +239,7 @@ export class HorariosPage implements OnInit {
   }
 
   cancelar() {
-    this.empleadoSeleccionado = '';
+    this.usuarioSeleccionado = '';
     this.ubicacionSeleccionada = null;
     this.fechaInicio = '';
     this.fechaFin = '';
@@ -214,20 +259,30 @@ export class HorariosPage implements OnInit {
     this.horaFin = horario.horaFin;
     this.fechaInicio = horario.fechaInicio;
     this.fechaFin = horario.fechaFin;
+    this.fechaFinRepeticion = horario.fechaFinRepeticion;
     this.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
     this.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
+    this.toleranciaInicio = horario.toleranciaInicioAntes || 5;
+    this.toleranciaFin = horario.toleranciaFinDespues || 5;
     this.repetirTurno = horario.dias && horario.dias.length > 0;
     this.horarioEditandoIndex = i;
   }
 
   guardarHorario() {
-    if (!this.horaInicio || !this.horaFin || (this.repetirTurno && (this.diasSeleccionados.length === 0 || !this.fechaFinRepeticion))) {
+    if (!this.horaInicio || !this.horaFin) {
       alert('Completa todos los campos antes de guardar el horario.');
       return;
     }
+    let dias: number[] = [];
+    if (this.repetirTurno) {
+      dias = [...this.diasSeleccionados];
+    } else if (this.fechaInicio) {
+      const diaSemana = new Date(this.fechaInicio).getDay();
+      dias = [diaSemana];
+    }
     const horario = {
       nombreTurno: this.nombreTurno,
-      dias: this.repetirTurno ? [...this.diasSeleccionados] : [],
+      dias,
       horaInicio: this.horaInicio,
       horaFin: this.horaFin,
       fechaInicio: this.fechaInicio,
@@ -280,94 +335,104 @@ export class HorariosPage implements OnInit {
   }
 
   inicializarMapa() {
-    const mapElement = document.getElementById('map');
-    if (!mapElement) {
-      console.error('Elemento del mapa no encontrado');
-      return;
-    }
-    // Limpiar mapa anterior si existe
-    if (this.map) {
-      this.map.setTarget(null);
-    }
-    this.vectorSource = new VectorSource();
-    this.vectorLayer = new VectorLayer({
-      source: this.vectorSource
-    });
-    this.map = new Map({
-      target: mapElement,
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-        this.vectorLayer
-      ],
-      view: new View({
-        center: fromLonLat([-78.5123274, -0.2201641]), // Quito por defecto
-        zoom: 15
-      })
-    });
-
-    // Función para actualizar el círculo
-    const actualizarCirculo = (lon: number, lat: number) => {
-      if (this.circle) {
-        this.vectorSource.removeFeature(this.circle);
-      }
-      this.circle = new Feature({
-        geometry: new OlCircle([lon, lat], this.radioUbicacion || 100)
-      });
-      this.circle.setStyle(new Style({
-        stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
-        fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
-      }));
-      this.vectorSource.addFeature(this.circle);
-    };
-
-    this.map.on('click', async (evt: any) => {
-      const coords = evt.coordinate;
-      const [lon, lat] = this.map.getCoordinateFromPixel(evt.pixel);
-      this.ubicacionSeleccionada = { lat, lng: lon };
-      this.vectorSource.clear();
-      // Marcador
-      this.marker = new Feature({
-        geometry: new Point([lon, lat])
-      });
-      this.marker.setStyle(new Style({
-        image: new Icon({
-          src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-          scale: 0.05
-        })
-      }));
-      this.vectorSource.addFeature(this.marker);
-      // Círculo de radio
-      actualizarCirculo(lon, lat);
-      // Geocodificación inversa para obtener la dirección textual
-      try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-        const data = await response.json();
-        if (data && data.display_name) {
-          this.ubicacionNombre = data.display_name;
+    const intentarInicializar = (intentosRestantes = 10) => {
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
+        if (intentosRestantes > 0) {
+          setTimeout(() => intentarInicializar(intentosRestantes - 1), 100);
         } else {
-          this.ubicacionNombre = '';
+          console.error('Elemento del mapa no encontrado después de varios intentos');
         }
-      } catch (error) {
-        this.ubicacionNombre = '';
+        return;
       }
-    });
+      // Limpiar mapa anterior si existe
+      if (this.map) {
+        this.map.setTarget(null);
+      }
+      this.vectorSource = new VectorSource();
+      this.vectorLayer = new VectorLayer({
+        source: this.vectorSource
+      });
+      this.map = new Map({
+        target: mapElement,
+        layers: [
+          new TileLayer({
+            source: new OSM(),
+          }),
+          this.vectorLayer
+        ],
+        view: new View({
+          center: fromLonLat([-78.5123274, -0.2201641]), // Quito por defecto
+          zoom: 15
+        })
+      });
 
-    // Observar cambios en el radio
-    const radioInput = document.querySelector('ion-input[name="radioUbicacion"]');
-    if (radioInput) {
-      radioInput.addEventListener('ionChange', (event: any) => {
-        if (this.ubicacionSeleccionada && this.marker) {
-          const [lon, lat] = this.marker.getGeometry().getCoordinates();
-          actualizarCirculo(lon, lat);
+      // Función para actualizar el círculo
+      const actualizarCirculo = (lon: number, lat: number) => {
+        if (this.circle) {
+          this.vectorSource.removeFeature(this.circle);
+        }
+        this.circle = new Feature({
+          geometry: new OlCircle([lon, lat], this.radioUbicacion || 100)
+        });
+        this.circle.setStyle(new Style({
+          stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+          fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+        }));
+        this.vectorSource.addFeature(this.circle);
+      };
+
+      this.map.on('click', async (evt: any) => {
+        const coords = evt.coordinate;
+        const [lon, lat] = this.map.getCoordinateFromPixel(evt.pixel);
+        this.ubicacionSeleccionada = { lat, lng: lon };
+        this.vectorSource.clear();
+        // Marcador
+        this.marker = new Feature({
+          geometry: new Point([lon, lat])
+        });
+        this.marker.setStyle(new Style({
+          image: new Icon({
+            src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+            scale: 0.05
+          })
+        }));
+        this.vectorSource.addFeature(this.marker);
+        // Círculo de radio
+        actualizarCirculo(lon, lat);
+        // Geocodificación inversa para obtener la dirección textual
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+          const data = await response.json();
+          if (data && data.display_name) {
+            this.direccionRealSeleccionada = data.display_name;
+          } else {
+            this.direccionRealSeleccionada = '';
+          }
+          console.log('Dirección seleccionada:', this.direccionRealSeleccionada);
+          this.cdr.detectChanges();
+        } catch (error) {
+          this.direccionRealSeleccionada = '';
+          this.cdr.detectChanges();
         }
       });
-    }
 
-    setTimeout(() => {
-      this.map.updateSize();
-    }, 200);
+      // Observar cambios en el radio
+      const radioInput = document.querySelector('ion-input[name="radioUbicacion"]');
+      if (radioInput) {
+        radioInput.addEventListener('ionChange', (event: any) => {
+          if (this.ubicacionSeleccionada && this.marker) {
+            const [lon, lat] = this.marker.getGeometry().getCoordinates();
+            actualizarCirculo(lon, lat);
+          }
+        });
+      }
+
+      setTimeout(() => {
+        this.map.updateSize();
+      }, 200);
+    };
+    intentarInicializar();
   }
 
   toggleDia(dia: number) {
@@ -417,12 +482,8 @@ export class HorariosPage implements OnInit {
     }
   }
 
-  get empleadosSeleccionados() {
-    return this.empleados && this.empleados.some(e => e.seleccionado);
-  }
-
-  get empleadoSeleccionadoObj() {
-    return this.empleados.find(e => e.id === this.empleadoSeleccionado);
+  get usuariosSeleccionados() {
+    return this.usuarios && this.usuarios.some(u => u.seleccionado);
   }
 
   abrirSelectorUbicacion(i: number) {

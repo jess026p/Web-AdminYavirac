@@ -10,20 +10,20 @@
       <ion-card-title>Asignar Horario y Ubicación</ion-card-title>
     </ion-card-header>
     <ion-card-content>
-      <!-- Paso 1: Selección de empleado -->
+      <!-- Paso 1: Selección de usuario -->
       <div *ngIf="paso === 1">
         <ion-list>
-          <ion-radio-group [(ngModel)]="empleadoSeleccionado">
-            <ion-item *ngFor="let empleado of empleados">
+          <ion-radio-group [(ngModel)]="usuarioSeleccionado">
+            <ion-item *ngFor="let usuario of usuarios">
               <ion-label>
-                {{ empleado.nombre }} {{ empleado.apellido }} ({{ empleado.correo }})
-                <span *ngIf="empleado.sinHorario" style="color: #888; font-weight: bold;"> (Sin asignación de horario)</span>
+                {{ usuario.name }} {{ usuario.lastname }} ({{ usuario.email }})
+                <span *ngIf="usuario.sinHorario" style="color: #888; font-weight: bold;"> (Sin asignación de horario)</span>
               </ion-label>
-              <ion-radio slot="end" [value]="empleado.id"></ion-radio>
+              <ion-radio slot="end" [value]="usuario.id"></ion-radio>
             </ion-item>
           </ion-radio-group>
         </ion-list>
-        <ion-button expand="block" color="primary" (click)="siguientePaso()" [disabled]="!empleadoSeleccionado">Siguiente</ion-button>
+        <ion-button expand="block" color="primary" (click)="siguientePaso()" [disabled]="!usuarioSeleccionado">Siguiente</ion-button>
       </div>
 
       <!-- Paso 2: Configuración de horario -->
@@ -31,8 +31,8 @@
         <ion-item color="light">
           <ion-label>
             <strong>Asignando horario a:</strong>
-            <span *ngIf="empleadoSeleccionadoObj">
-              {{ empleadoSeleccionadoObj.nombre }} {{ empleadoSeleccionadoObj.apellido }} ({{ empleadoSeleccionadoObj.correo }})
+            <span *ngIf="usuarioSeleccionadoObj">
+              {{ usuarioSeleccionadoObj.name }} {{ usuarioSeleccionadoObj.lastname }} ({{ usuarioSeleccionadoObj.email }})
             </span>
           </ion-label>
         </ion-item>
@@ -51,27 +51,24 @@
           </ion-row>
           <ion-item>
             <ion-label position="stacked">Fecha de fin de repetición</ion-label>
+            <ion-input
+              readonly
+              [value]="fechaFinRepeticion ? (fechaFinRepeticion | date:'yyyy-MM-dd') : ''"
+              (click)="mostrarSelectorFecha = true"
+              placeholder="Selecciona la fecha">
+              <ion-icon name="calendar-outline" slot="end" (click)="mostrarSelectorFecha = true"></ion-icon>
+            </ion-input>
+          </ion-item>
+          <div *ngIf="mostrarSelectorFecha" style="margin-top: 8px;">
             <ion-datetime
               presentation="date"
               [(ngModel)]="fechaFinRepeticion"
-              name="fechaFinRepeticion"
+              (ionChange)="mostrarSelectorFecha = false"
               [showDefaultButtons]="true"
-              (ionChange)="onFechaFinRepeticionChange()"
-              [readonly]="!!fechaFinRepeticion"
-              *ngIf="!fechaFinRepeticion"
-              placeholder="Selecciona la fecha"
               cancelText="Cancelar"
               doneText="Listo">
             </ion-datetime>
-            <div *ngIf="fechaFinRepeticion" style="margin-top: 8px;">
-              <ion-chip color="primary">
-                <ion-label>
-                  {{ fechaFinRepeticion | date:'longDate' }}
-                </ion-label>
-                <ion-icon name="close-circle" (click)="fechaFinRepeticion=''" slot="end"></ion-icon>
-              </ion-chip>
-            </div>
-          </ion-item>
+          </div>
         </div>
         <ion-item>
           <ion-label position="stacked">Nombre del turno (opcional)</ion-label>
@@ -81,27 +78,24 @@
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Inicio de turno</ion-label>
+              <ion-input
+                readonly
+                [value]="fechaInicio ? (fechaInicio | date:'yyyy-MM-dd') : ''"
+                (click)="mostrarSelectorFechaInicio = true"
+                placeholder="Selecciona la fecha">
+                <ion-icon name="calendar-outline" slot="end" (click)="mostrarSelectorFechaInicio = true"></ion-icon>
+              </ion-input>
+            </ion-item>
+            <div *ngIf="mostrarSelectorFechaInicio" style="margin-top: 8px;">
               <ion-datetime
                 presentation="date"
                 [(ngModel)]="fechaInicio"
-                name="fechaInicio"
+                (ionChange)="mostrarSelectorFechaInicio = false"
                 [showDefaultButtons]="true"
-                (ionChange)="onFechaInicioChange()"
-                [readonly]="!!fechaInicio"
-                *ngIf="!fechaInicio"
-                placeholder="Selecciona la fecha"
                 cancelText="Cancelar"
                 doneText="Listo">
               </ion-datetime>
-              <div *ngIf="fechaInicio" style="margin-top: 8px;">
-                <ion-chip color="primary">
-                  <ion-label>
-                    {{ fechaInicio | date:'longDate' }}
-                  </ion-label>
-                  <ion-icon name="close-circle" (click)="fechaInicio=''" slot="end"></ion-icon>
-                </ion-chip>
-              </div>
-            </ion-item>
+            </div>
             <ion-item>
               <ion-label position="stacked">Hora de inicio</ion-label>
               <ion-input
@@ -115,27 +109,24 @@
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Fin de turno</ion-label>
+              <ion-input
+                readonly
+                [value]="fechaFin ? (fechaFin | date:'yyyy-MM-dd') : ''"
+                (click)="mostrarSelectorFechaFin = true"
+                placeholder="Selecciona la fecha">
+                <ion-icon name="calendar-outline" slot="end" (click)="mostrarSelectorFechaFin = true"></ion-icon>
+              </ion-input>
+            </ion-item>
+            <div *ngIf="mostrarSelectorFechaFin" style="margin-top: 8px;">
               <ion-datetime
                 presentation="date"
                 [(ngModel)]="fechaFin"
-                name="fechaFin"
+                (ionChange)="mostrarSelectorFechaFin = false"
                 [showDefaultButtons]="true"
-                (ionChange)="onFechaFinChange()"
-                [readonly]="!!fechaFin"
-                *ngIf="!fechaFin"
-                placeholder="Selecciona la fecha"
                 cancelText="Cancelar"
                 doneText="Listo">
               </ion-datetime>
-              <div *ngIf="fechaFin" style="margin-top: 8px;">
-                <ion-chip color="primary">
-                  <ion-label>
-                    {{ fechaFin | date:'longDate' }}
-                  </ion-label>
-                  <ion-icon name="close-circle" (click)="fechaFin=''" slot="end"></ion-icon>
-                </ion-chip>
-              </div>
-            </ion-item>
+            </div>
             <ion-item>
               <ion-label position="stacked">Hora de fin</ion-label>
               <ion-input
@@ -192,7 +183,7 @@
             <ion-button color="primary" (click)="agregarNuevoHorario()">Agregar nuevo horario</ion-button>
           </ion-col>
           <ion-col size="auto">
-            <ion-button expand="block" color="primary" (click)="siguientePaso()" [disabled]="!empleadoSeleccionado">Siguiente</ion-button>
+            <ion-button expand="block" color="primary" (click)="siguientePaso()" [disabled]="!usuarioSeleccionado">Siguiente</ion-button>
           </ion-col>
         </ion-row>
         <ion-list *ngIf="horariosAgregados.length > 0">
@@ -231,8 +222,8 @@
         <ion-item color="light">
           <ion-label>
             <strong>Asignando ubicación a:</strong>
-            <span *ngIf="empleadoSeleccionadoObj">
-              {{ empleadoSeleccionadoObj.nombre }} {{ empleadoSeleccionadoObj.apellido }} ({{ empleadoSeleccionadoObj.correo }})
+            <span *ngIf="usuarioSeleccionadoObj">
+              {{ usuarioSeleccionadoObj.name }} {{ usuarioSeleccionadoObj.lastname }} ({{ usuarioSeleccionadoObj.email }})
             </span>
           </ion-label>
         </ion-item>
@@ -270,18 +261,24 @@
         </ion-row>
         <!-- Modal o sección de mapa para seleccionar ubicación -->
         <div *ngIf="mostrarMapaUbicacion" class="ubicacion-modal">
-          <ion-item>
-            <ion-label position="stacked">Radio (metros)</ion-label>
-            <ion-input type="number" [(ngModel)]="radioUbicacion" name="radioUbicacion" min="10" max="1000" step="10" placeholder="100"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Buscar dirección</ion-label>
-            <ion-input [(ngModel)]="busquedaDireccion" name="busquedaDireccion" placeholder="Ej: Av. Amazonas y Colón" (keyup.enter)="buscarDireccion()"></ion-input>
-          </ion-item>
+          <ion-row>
+            <ion-col size="8">
+              <ion-item>
+                <ion-label position="stacked">Buscar dirección</ion-label>
+                <ion-input [(ngModel)]="busquedaDireccion" name="busquedaDireccion" placeholder="Ej: Av. Amazonas y Colón" (keyup.enter)="buscarDireccion()"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="4">
+              <ion-item>
+                <ion-label position="stacked">Radio (metros)</ion-label>
+                <ion-input type="number" [(ngModel)]="radioUbicacion" name="radioUbicacion" min="10" max="1000" step="10" placeholder="100"></ion-input>
+              </ion-item>
+            </ion-col>
+          </ion-row>
           <div id="map" style="height: 400px; width: 100%; margin: 0 0 16px 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);"></div>
           <ion-item>
             <ion-label position="stacked">Nombre de la ubicación</ion-label>
-            <ion-input [(ngModel)]="ubicacionNombre" name="ubicacionNombre" placeholder="Ej: Oficina Central"></ion-input>
+            <ion-input [(ngModel)]="ubicacionNombre" name="ubicacionNombre" placeholder="Ej: Aula 6, Oficina Central"></ion-input>
           </ion-item>
           <ion-row class="ion-justify-content-end ion-margin-top">
             <ion-col size="auto">

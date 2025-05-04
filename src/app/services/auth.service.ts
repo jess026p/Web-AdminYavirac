@@ -62,7 +62,7 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
     this.isAuthenticated.next(false);
     this.router.navigate(['/login']);
@@ -77,16 +77,16 @@ export class AuthService {
   }
 
   private checkToken(): boolean {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     return !!token;
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('accessToken');
   }
 
   private setToken(token: string): void {
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', token);
   }
 
   private setUserData(user: any): void {

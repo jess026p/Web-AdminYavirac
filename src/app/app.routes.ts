@@ -50,5 +50,5 @@ export const routes: Routes = [
   {
     path: 'roles',
     loadComponent: () => import('./pages/roles/roles.page').then( m => m.RolesPage)
-  }
+  },
 ];

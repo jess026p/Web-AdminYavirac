@@ -107,9 +107,7 @@ export class UsuariosPage implements OnInit {
 
     this.usuariosService.crearUsuario(usuario as any).subscribe({
       next: (response: Usuario) => {
-        const nuevoUsuario = response;
-        this.usuarios.push(nuevoUsuario);
-        this.filtrarUsuarios();
+        this.cargarUsuarios();
         this.mostrarMensaje('Usuario creado correctamente', 'success');
         loading.dismiss();
       },
@@ -135,12 +133,7 @@ export class UsuariosPage implements OnInit {
 
     this.usuariosService.actualizarUsuario(usuario as any).subscribe({
       next: (response: Usuario) => {
-        const usuarioActualizado = response;
-        const index = this.usuarios.findIndex(u => u.id === usuario.id);
-        if (index !== -1) {
-          this.usuarios[index] = usuarioActualizado;
-          this.filtrarUsuarios();
-        }
+        this.cargarUsuarios();
         this.mostrarMensaje('Usuario actualizado correctamente', 'success');
         loading.dismiss();
       },
@@ -176,15 +169,13 @@ export class UsuariosPage implements OnInit {
 
             this.usuariosService.eliminarUsuario(id).subscribe({
               next: () => {
-                this.usuarios = this.usuarios.filter(u => u.id !== id);
-                this.filtrarUsuarios();
+                this.cargarUsuarios();
                 this.mostrarMensaje('Usuario eliminado correctamente', 'success');
                 loading.dismiss();
               },
               error: (error) => {
                 console.error('Error al eliminar usuario:', error);
-                this.usuarios = this.usuarios.filter(u => u.id !== id);
-                this.filtrarUsuarios();
+                this.cargarUsuarios();
                 this.mostrarMensaje('Error al eliminar. Usuario eliminado localmente.', 'warning');
                 loading.dismiss();
               }
