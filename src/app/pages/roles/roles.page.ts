@@ -1,20 +1,78 @@
 import { Component, OnInit } from '@angular/core';
+import { IonicModule, ToastController, LoadingController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { UsuariosService, Usuario, Role } from '../../services/usuarios.service';
 
 @Component({
   selector: 'app-roles',
-  templateUrl: './roles.page.html',
-  styleUrls: ['./roles.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [IonicModule, CommonModule, FormsModule],
+  providers: [ToastController],
+  templateUrl: './roles.page.html',
+  styleUrls: ['./roles.page.scss']
 })
 export class RolesPage implements OnInit {
+  usuarios: Usuario[] = [];
+  roles: Role[] = [];
+  cargando = false;
 
-  constructor() { }
+  constructor(
+    private usuariosService: UsuariosService,
+    private toastController: ToastController,
+    private loadingController: LoadingController
+  ) {}
 
   ngOnInit() {
+    this.cargarDatos();
   }
 
+  async cargarDatos() {
+    this.cargando = true;
+    try {
+      const usuarios = await this.usuariosService.obtenerUsuarios().toPromise();
+      const roles = await this.usuariosService.obtenerRoles().toPromise();
+      this.usuarios = usuarios ?? [];
+      this.roles = roles ?? [];
+    } catch (error) {
+      this.mostrarMensaje('Error al cargar usuarios o roles', 'danger');
+    }
+    this.cargando = false;
+  }
+
+  rolesSeleccionados(usuario: Usuario): string[] {
+    return usuario.roles ? usuario.roles.map(r => typeof r === 'object' ? r.id : r) : [];
+  }
+
+  onRolesChange(usuario: Usuario, nuevosRoles: string[]) {
+    usuario.roles = this.roles.filter(r => nuevosRoles.includes(r.id));
+  }
+
+  async guardarRoles(usuario: Usuario) {
+    if (!usuario.id) {
+      this.mostrarMensaje('Error: No se puede actualizar un usuario sin ID', 'danger');
+      return;
+    }
+    const loading = await this.loadingController.create({ message: 'Guardando roles...' });
+    await loading.present();
+    try {
+      const usuarioSinId = { ...usuario };
+      delete usuarioSinId.id;
+      await this.usuariosService.actualizarUsuario(usuario.id, usuarioSinId).toPromise();
+      this.mostrarMensaje('Roles actualizados correctamente', 'success');
+    } catch (error) {
+      this.mostrarMensaje('Error al actualizar roles', 'danger');
+    }
+    loading.dismiss();
+  }
+
+  async mostrarMensaje(msg: string, color: string) {
+    const toast = await this.toastController.create({
+      message: msg,
+      duration: 2500,
+      color,
+      position: 'bottom'
+    });
+    await toast.present();
+  }
 }

@@ -86,10 +86,8 @@ export class UsuariosPage implements OnInit {
 
     if (data?.usuario) {
       const usuarioData = {
-        ...data.usuario,
-        roles: data.usuario.roles.map((r: any) => typeof r === 'object' ? r.id : r)
+        ...data.usuario
       };
-
       usuario ? this.actualizarUsuario(usuarioData) : this.crearUsuario(usuarioData);
     }
   }
@@ -131,7 +129,10 @@ export class UsuariosPage implements OnInit {
     });
     await loading.present();
 
-    this.usuariosService.actualizarUsuario(usuario as any).subscribe({
+    const usuarioSinId = { ...usuario };
+    delete usuarioSinId.id;
+
+    this.usuariosService.actualizarUsuario(usuario.id, usuarioSinId).subscribe({
       next: (response: Usuario) => {
         this.cargarUsuarios();
         this.mostrarMensaje('Usuario actualizado correctamente', 'success');

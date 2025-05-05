@@ -1,13 +1,14 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { IonicModule, ModalController, AlertController, ToastController } from '@ionic/angular';
-import { Usuario, Role } from 'src/app/services/usuarios.service';
+import { Usuario, Role, UsuariosService } from 'src/app/services/usuarios.service';
 
 @Component({
   selector: 'app-formulario-usuario',
   standalone: true,
   imports: [CommonModule, IonicModule, ReactiveFormsModule, FormsModule],
+  providers: [FormBuilder, ToastController],
   templateUrl: './formulario-usuario.component.html',
   styleUrls: ['./formulario-usuario.component.scss']
 })
@@ -17,19 +18,31 @@ export class FormularioUsuarioComponent implements OnInit {
   @Input() roles: Role[] = [];
 
   form!: FormGroup;
+  catalogosIdentificacion: any[] = [];
+  catalogosGenero: any[] = [];
+  mostrarSelectorFecha = false;
 
   get userForm(): FormGroup {
     return this.form;
   }
 
   constructor(
-    private fb: FormBuilder,
+    @Inject(FormBuilder) private fb: FormBuilder,
     private modalController: ModalController,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private usuariosService: UsuariosService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Cargar ambos catálogos en paralelo
+    const [catalogosIdentificacion, catalogosGenero] = await Promise.all([
+      this.usuariosService.obtenerCatalogosIdentificacion().toPromise(),
+      this.usuariosService.obtenerCatalogosGenero().toPromise()
+    ]);
+    this.catalogosIdentificacion = catalogosIdentificacion || [];
+    this.catalogosGenero = catalogosGenero || [];
+
     const defaultValues = {
       id: null,
       username: '',
@@ -38,32 +51,66 @@ export class FormularioUsuarioComponent implements OnInit {
       email: '',
       password: '',
       identification: '',
-      identificationType: 'cedula',
+      identificationType: this.catalogosIdentificacion[0] || null,
       roles: [],
-      passwordChanged: true
+      passwordChanged: true,
+      gender: null,
+      birthdate: null,
+      cellPhone: ''
     };
 
-    const initialValues = {
+    let initialValues = {
       ...defaultValues,
       ...this.usuario,
       password: '' // Nunca mostramos la contraseña real
     };
 
+    // Asegura que identificationType sea SIEMPRE un objeto completo del catálogo
+    if (initialValues.identificationType && typeof initialValues.identificationType === 'object' && initialValues.identificationType.id) {
+      const found = this.catalogosIdentificacion.find(cat => cat.id === initialValues.identificationType.id);
+      initialValues.identificationType = found || this.catalogosIdentificacion[0];
+    } else if (typeof initialValues.identificationType === 'string') {
+      const found = this.catalogosIdentificacion.find(cat => cat.id === initialValues.identificationType);
+      initialValues.identificationType = found || this.catalogosIdentificacion[0];
+    } else {
+      initialValues.identificationType = this.catalogosIdentificacion[0];
+    }
+
     this.form = this.fb.group({
       id: [initialValues.id],
       username: [initialValues.username, [Validators.required]],
-      name: [initialValues.name, [Validators.required]],
-      lastname: [initialValues.lastname, [Validators.required]],
+      name: [initialValues.name, [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/), Validators.minLength(2)]],
+      lastname: [initialValues.lastname, [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/), Validators.minLength(2)]],
       email: [initialValues.email, [Validators.required, Validators.email]],
-      identification: [initialValues.identification, [Validators.required]],
-      identificationType: [initialValues.identificationType?.toLowerCase() || 'cedula', [Validators.required]],
+      identification: [initialValues.identification, [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(8)]],
+      identificationType: [
+        initialValues.identificationType && typeof initialValues.identificationType === 'object' && 'id' in initialValues.identificationType
+          ? (initialValues.identificationType as { id: string }).id
+          : initialValues.identificationType,
+        this.editMode ? [] : [Validators.required]
+      ],
+      gender: [
+        initialValues.gender && typeof initialValues.gender === 'object' && 'id' in initialValues.gender
+          ? (initialValues.gender as { id: string }).id
+          : initialValues.gender,
+        this.editMode ? [] : [Validators.required]
+      ],
+      birthdate: [initialValues.birthdate || null, [Validators.required]],
+      cellPhone: [initialValues.cellPhone || '', [Validators.required, Validators.pattern(/^[0-9]{9,15}$/)]],
       password: [
         initialValues.password,
         this.editMode ? [] : [Validators.required, Validators.minLength(6)]
       ],
-      roles: [initialValues.roles, [Validators.required]],
       passwordChanged: [initialValues.passwordChanged ?? true]
     });
+
+    // Si es edición, aseguramos que los selects tengan el id correcto
+    if (this.editMode && this.usuario) {
+      this.form.patchValue({
+        gender: typeof this.usuario.gender === 'object' && this.usuario.gender !== null ? (this.usuario.gender as { id: string }).id : this.usuario.gender ?? null,
+        identificationType: typeof this.usuario.identificationType === 'object' && this.usuario.identificationType !== null ? (this.usuario.identificationType as { id: string }).id : this.usuario.identificationType ?? null
+      });
+    }
   }
 
   cancel() {
@@ -72,31 +119,33 @@ export class FormularioUsuarioComponent implements OnInit {
 
   async saveUser() {
     if (this.form.invalid) {
-      const alert = await this.alertController.create({
-        header: 'Formulario incompleto',
-        message: 'Por favor complete todos los campos obligatorios.',
-        buttons: ['Aceptar']
-      });
-      await alert.present();
+      this.form.markAllAsTouched();
+      await this.showMessage('Por favor, corrige los errores antes de guardar.');
       return;
     }
 
     const rawData = this.form.value;
-
     const usuarioData: any = {
       ...rawData,
-      identificationType: rawData.identificationType?.toLowerCase(),
-      roles: rawData.roles.map((r: any) => typeof r === 'object' ? r.id : r)
+      identificationType: typeof rawData.identificationType === 'object' && rawData.identificationType !== null
+        ? rawData.identificationType.id
+        : rawData.identificationType,
+      gender: rawData.gender,
+      birthdate: rawData.birthdate ? rawData.birthdate.split('T')[0] : null,
+      cellPhone: rawData.cellPhone || null
     };
 
-    if (!usuarioData.id) delete usuarioData.id;
+    // Eliminar campos que no deben ir en el payload
+    if ('id' in usuarioData) delete usuarioData.id;
+    if ('genderId' in usuarioData) delete usuarioData.genderId;
+
     if (this.editMode && !usuarioData.password) {
       delete usuarioData.password;
     }
 
     console.log('Datos a enviar al backend:', usuarioData);
-
-    this.modalController.dismiss({ usuario: usuarioData });
+    // Devuelve el usuario con id (si existe) para que la página lo use en la URL
+    this.modalController.dismiss({ usuario: { ...usuarioData, id: this.usuario?.id } });
   }
 
   async showMessage(msg: string) {
@@ -107,5 +156,9 @@ export class FormularioUsuarioComponent implements OnInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  getNombreCatalogo(valor: any): string | null {
+    return valor && typeof valor === 'object' && 'name' in valor ? valor.name : null;
   }
 }

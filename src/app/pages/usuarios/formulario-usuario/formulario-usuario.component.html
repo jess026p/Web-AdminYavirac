@@ -10,96 +10,177 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form [formGroup]="userForm" (ngSubmit)="saveUser()">
-    <ion-list>
-      <ion-item lines="full">
-        <ion-label position="stacked">Nombre de usuario*</ion-label>
-        <ion-input formControlName="username" type="text" placeholder="Ingrese nombre de usuario" autocomplete="off"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('username')?.touched && userForm.get('username')?.hasError('required')">
-          El nombre de usuario es obligatorio
-        </ion-note>
-      </ion-item>
-
-      <ion-item lines="full">
-        <ion-label position="stacked">Nombre*</ion-label>
-        <ion-input formControlName="name" type="text" placeholder="Ingrese nombre"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('name')?.touched && userForm.get('name')?.hasError('required')">
-          El nombre es obligatorio
-        </ion-note>
-      </ion-item>
-
-      <ion-item lines="full">
-        <ion-label position="stacked">Apellido*</ion-label>
-        <ion-input formControlName="lastname" type="text" placeholder="Ingrese apellido"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('lastname')?.touched && userForm.get('lastname')?.hasError('required')">
-          El apellido es obligatorio
-        </ion-note>
-      </ion-item>
-
-      <ion-item lines="full">
-        <ion-label position="stacked">Correo electrónico*</ion-label>
-        <ion-input formControlName="email" type="email" placeholder="ejemplo@correo.com"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('email')?.touched && userForm.get('email')?.hasError('required')">
-          El correo es obligatorio
-        </ion-note>
-        <ion-note slot="error" *ngIf="userForm.get('email')?.touched && userForm.get('email')?.hasError('email')">
-          Formato de correo inválido
-        </ion-note>
-      </ion-item>
-
-      <ion-item lines="full">
-        <ion-label position="stacked">Identificación*</ion-label>
-        <ion-input formControlName="identification" type="text" placeholder="Ingrese identificación"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('identification')?.touched && userForm.get('identification')?.hasError('required')">
-          La identificación es obligatoria
-        </ion-note>
-      </ion-item>
-
-      <ion-item lines="full" *ngIf="!editMode">
-        <ion-label position="stacked">Contraseña*</ion-label>
-        <ion-input formControlName="password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password"></ion-input>
-        <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('required')">
-          La contraseña es obligatoria
-        </ion-note>
-        <ion-note slot="error" *ngIf="userForm.get('password')?.touched && userForm.get('password')?.hasError('minlength')">
-          La contraseña debe tener al menos 8 caracteres
-        </ion-note>
-      </ion-item>
-      <ion-item lines="full">
-        <ion-label position="stacked">Tipo de Identificación*</ion-label>
-        <ion-select formControlName="identificationType" placeholder="Seleccione tipo">
-          <ion-select-option value="CEDULA">Cédula</ion-select-option>
-          <ion-select-option value="RUC">RUC</ion-select-option>
-        </ion-select>
-        <ion-note slot="error" *ngIf="userForm.get('identificationType')?.touched && userForm.get('identificationType')?.hasError('required')">
-          El tipo de identificación es obligatorio
-        </ion-note>
-      </ion-item>
-
-
-      <ion-item lines="none">
-        <ion-label position="stacked">Roles*</ion-label>
-        <ion-select formControlName="roles" multiple="true" placeholder="Seleccione roles">
-          <ion-select-option *ngFor="let rol of roles" [value]="rol">{{ rol.name }}</ion-select-option>
-        </ion-select>
-        <ion-note slot="error" *ngIf="userForm.get('roles')?.touched && userForm.get('roles')?.hasError('required')">
-          Debe seleccionar al menos un rol
-        </ion-note>
-      </ion-item>
-      <ion-item lines="full">
-        <ion-label>¿Contraseña cambiada?</ion-label>
-        <ion-toggle formControlName="passwordChanged"></ion-toggle>
-      </ion-item>
-
-    </ion-list>
-
-    <div class="ion-padding ion-text-center">
-      <ion-button type="submit" expand="block" [disabled]="userForm.invalid">
-        {{ editMode ? 'Actualizar' : 'Crear' }}
-      </ion-button>
-      <ion-button type="button" expand="block" fill="outline" (click)="cancel()" class="ion-margin-top">
-        Cancelar
-      </ion-button>
-    </div>
-  </form>
+  <div class="form-wrapper">
+    <form *ngIf="form && catalogosIdentificacion.length" [formGroup]="userForm" (ngSubmit)="saveUser()">
+      <ion-grid>
+        <ion-row>
+          <!-- Columna izquierda: Datos personales -->
+          <ion-col size="12" size-md="8">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Datos personales</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-row>
+                  <ion-col size="12" size-md="6">
+                    <ion-item>
+                      <ion-label position="stacked">Nombre*</ion-label>
+                      <ion-input formControlName="name" (ionInput)="userForm.get('name')?.markAsTouched()"></ion-input>
+                      <ion-note slot="error" *ngIf="userForm.get('name')?.invalid && (userForm.get('name')?.dirty || userForm.get('name')?.touched) && userForm.get('name')?.hasError('required')">
+                        El nombre es obligatorio
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('name')?.invalid && (userForm.get('name')?.dirty || userForm.get('name')?.touched) && userForm.get('name')?.hasError('pattern')">
+                        Solo se permiten letras
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('name')?.invalid && (userForm.get('name')?.dirty || userForm.get('name')?.touched) && userForm.get('name')?.hasError('minlength')">
+                        Mínimo 2 caracteres
+                      </ion-note>
+                    </ion-item>
+                  </ion-col><ion-col size="12" size-md="5">
+                    <ion-item>
+                      <ion-label position="stacked">Apellido*</ion-label>
+                      <ion-input formControlName="lastname" (ionInput)="userForm.get('lastname')?.markAsTouched()"></ion-input>
+                      <ion-note slot="error" *ngIf="userForm.get('lastname')?.invalid && (userForm.get('lastname')?.dirty || userForm.get('lastname')?.touched) && userForm.get('lastname')?.hasError('required')">
+                        El apellido es obligatorio
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('lastname')?.invalid && (userForm.get('lastname')?.dirty || userForm.get('lastname')?.touched) && userForm.get('lastname')?.hasError('pattern')">
+                        Solo se permiten letras
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('lastname')?.invalid && (userForm.get('lastname')?.dirty || userForm.get('lastname')?.touched) && userForm.get('lastname')?.hasError('minlength')">
+                        Mínimo 2 caracteres
+                      </ion-note>
+                    </ion-item>
+                  </ion-col>
+                  <ion-col size="12" size-md="6">
+                    <ion-item>
+                      <ion-label position="stacked">Identificación*</ion-label>
+                      <ion-input formControlName="identification" (ionInput)="userForm.get('identification')?.markAsTouched()"></ion-input>
+                      <ion-note slot="error" *ngIf="userForm.get('identification')?.invalid && (userForm.get('identification')?.dirty || userForm.get('identification')?.touched) && userForm.get('identification')?.hasError('required')">
+                        La identificación es obligatoria
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('identification')?.invalid && (userForm.get('identification')?.dirty || userForm.get('identification')?.touched) && userForm.get('identification')?.hasError('pattern')">
+                        Solo se permiten números
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('identification')?.invalid && (userForm.get('identification')?.dirty || userForm.get('identification')?.touched) && userForm.get('identification')?.hasError('minlength')">
+                        Mínimo 8 dígitos
+                      </ion-note>
+                    </ion-item>
+                  </ion-col>
+                  <ion-col size="12" size-md="5" *ngIf="!editMode">
+                    <ion-item>
+                      <ion-label position="stacked">Tipo de Identificación*</ion-label>
+                      <div *ngIf="getNombreCatalogo(usuario?.identificationType)">
+                        Seleccionado: {{ getNombreCatalogo(usuario?.identificationType) }}
+                      </div>
+                      <ion-select formControlName="identificationType">
+                        <ion-select-option *ngFor="let cat of catalogosIdentificacion" [value]="cat.id">{{ cat.name }}</ion-select-option>
+                      </ion-select>
+                      <ion-note slot="error" *ngIf="userForm.get('identificationType')?.invalid && (userForm.get('identificationType')?.dirty || userForm.get('identificationType')?.touched) && userForm.get('identificationType')?.hasError('required')">
+                        El tipo de identificación es obligatorio
+                      </ion-note>
+                    </ion-item>
+                  </ion-col>
+                </ion-row>
+                <ion-row>
+                  
+                  <ion-col size="12" size-md="6" *ngIf="!editMode">
+                    <ion-item>
+                      <ion-label position="stacked">Género</ion-label>
+                      <div *ngIf="getNombreCatalogo(usuario?.gender)">
+                        Seleccionado: {{ getNombreCatalogo(usuario?.gender) }}
+                      </div>
+                      <ion-select formControlName="gender">
+                        <ion-select-option *ngFor="let g of catalogosGenero" [value]="g.id">{{ g.name }}</ion-select-option>
+                      </ion-select>
+                      <ion-note slot="error" *ngIf="userForm.get('gender')?.invalid && (userForm.get('gender')?.dirty || userForm.get('gender')?.touched) && userForm.get('gender')?.hasError('required')">
+                        El género es obligatorio
+                      </ion-note>
+                    </ion-item>
+                  </ion-col>
+                  <ion-col size="12" size-md="5">
+                    <ion-item>
+                      <ion-label position="stacked">Celular*</ion-label>
+                      <ion-input formControlName="cellPhone" type="tel" (ionInput)="userForm.get('cellPhone')?.markAsTouched()"></ion-input>
+                      <ion-note slot="error" *ngIf="userForm.get('cellPhone')?.invalid && (userForm.get('cellPhone')?.dirty || userForm.get('cellPhone')?.touched) && userForm.get('cellPhone')?.hasError('required')">
+                        El número de celular es obligatorio
+                      </ion-note>
+                      <ion-note slot="error" *ngIf="userForm.get('cellPhone')?.invalid && (userForm.get('cellPhone')?.dirty || userForm.get('cellPhone')?.touched) && userForm.get('cellPhone')?.hasError('pattern')">
+                        El número de celular debe tener entre 9 y 15 dígitos
+                      </ion-note>
+                    </ion-item>
+                  </ion-col>
+                </ion-row>
+                <ion-row>
+                  
+                  <ion-col size="12" size-md="6">
+                    <ion-item>
+                      <ion-label position="stacked">Fecha de nacimiento*</ion-label>
+                      <ion-input readonly [value]="form.value.birthdate | date:'yyyy-MM-dd'" (click)="mostrarSelectorFecha = true" (ionInput)="userForm.get('birthdate')?.markAsTouched()"></ion-input>
+                      <ion-note slot="error" *ngIf="userForm.get('birthdate')?.invalid && (userForm.get('birthdate')?.dirty || userForm.get('birthdate')?.touched) && userForm.get('birthdate')?.hasError('required')">
+                        La fecha de nacimiento es obligatoria
+                      </ion-note>
+                    </ion-item>
+                    <ion-item *ngIf="mostrarSelectorFecha">
+                      <ion-datetime
+                        formControlName="birthdate"
+                        presentation="date"
+                        (ionChange)="mostrarSelectorFecha = false">
+                      </ion-datetime>
+                    </ion-item>
+                  </ion-col>
+                </ion-row>
+              
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          <!-- Columna derecha: Datos de acceso -->
+          <ion-col size="12" size-md="4">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Datos de acceso</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-item>
+                  <ion-label position="stacked">Usuario*</ion-label>
+                  <ion-input formControlName="username" (ionInput)="userForm.get('username')?.markAsTouched()"></ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-label position="stacked">Correo electrónico*</ion-label>
+                  <ion-input formControlName="email" autocomplete="new-password" (ionInput)="userForm.get('email')?.markAsTouched()"></ion-input>
+                  <ion-note slot="error" *ngIf="userForm.get('email')?.invalid && (userForm.get('email')?.dirty || userForm.get('email')?.touched) && userForm.get('email')?.hasError('required')">
+                    El correo es obligatorio
+                  </ion-note>
+                  <ion-note slot="error" *ngIf="userForm.get('email')?.invalid && (userForm.get('email')?.dirty || userForm.get('email')?.touched) && userForm.get('email')?.hasError('email')">
+                    Formato de correo inválido
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label position="stacked">Contraseña*</ion-label>
+                  <ion-input type="password" formControlName="password" autocomplete="new-password" (ionInput)="userForm.get('password')?.markAsTouched()"></ion-input>
+                  <ion-note slot="error" *ngIf="userForm.get('password')?.invalid && (userForm.get('password')?.dirty || userForm.get('password')?.touched) && userForm.get('password')?.hasError('required')">
+                    La contraseña es obligatoria
+                  </ion-note>
+                  <ion-note slot="error" *ngIf="userForm.get('password')?.invalid && (userForm.get('password')?.dirty || userForm.get('password')?.touched) && userForm.get('password')?.hasError('minlength')">
+                    Mínimo 6 caracteres
+                  </ion-note>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-label>¿Contraseña cambiada?</ion-label>
+                  <ion-checkbox slot="end" formControlName="passwordChanged"></ion-checkbox>
+                </ion-item>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+      <div class="botones-row ion-padding ion-text-center">
+        <ion-button type="submit" [disabled]="userForm.invalid">
+          {{ editMode ? 'Actualizar' : 'Crear' }}
+        </ion-button>
+        <ion-button type="button" fill="outline" (click)="cancel()">
+          Cancelar
+        </ion-button>
+      </div>
+    </form>
+  </div>
 </ion-content>

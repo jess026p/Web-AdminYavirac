@@ -24,9 +24,11 @@ export interface Usuario {
   email: string;
   password?: string;
   identification: string;
-  roles: Role[];
+  identificationType?: string | { id: string };
+  roles?: Role[];
   passwordChanged?: boolean;
   avatar?: string;
+  gender?: string;
 }
 
 @Injectable({
@@ -101,15 +103,8 @@ export class UsuariosService {
       );
   }
 
-
-  actualizarUsuario(usuario: Usuario): Observable<Usuario> {
-    if (!usuario.id) {
-      return throwError(() => new Error('ID de usuario requerido para actualizar'));
-    }
-
-    const usuarioParaEnviar = this.prepararDatosUsuario(usuario);
-
-    return this.http.put<Usuario>(`${this.apiUrl}/${usuario.id}`, usuarioParaEnviar) // ✅ corregido
+  actualizarUsuario(id: string, usuario: Usuario): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.apiUrl}/${id}`, usuario)
       .pipe(
         timeout(10000),
         tap(response => console.log('Usuario actualizado:', response)),
@@ -132,10 +127,15 @@ export class UsuariosService {
   private prepararDatosUsuario(usuario: Usuario): any {
     const usuarioFormateado = { ...usuario };
 
-    if (usuarioFormateado.roles && Array.isArray(usuarioFormateado.roles)) {
-      usuarioFormateado.roles = usuarioFormateado.roles.map((rol: any) =>
-        typeof rol === 'object' && rol !== null ? rol.id : rol
-      );
+    delete usuarioFormateado.roles;
+
+    // Asegurar que identificationType sea string UUID
+    if (
+      usuarioFormateado.identificationType &&
+      typeof usuarioFormateado.identificationType === 'object' &&
+      'id' in usuarioFormateado.identificationType
+    ) {
+      usuarioFormateado.identificationType = usuarioFormateado.identificationType.id;
     }
 
     if (usuarioFormateado.password === '') {
@@ -143,5 +143,23 @@ export class UsuariosService {
     }
 
     return usuarioFormateado;
+  }
+
+  obtenerCatalogosIdentificacion(): Observable<any[]> {
+    return this.http.get<any>('http://localhost:3000/api/v1/catalogues/types/IDENTIFICATION_TYPE')
+      .pipe(
+        timeout(10000),
+        map(res => res.data || []),
+        catchError(this.handleError)
+      );
+  }
+
+  obtenerCatalogosGenero(): Observable<any[]> {
+    return this.http.get<any>('http://localhost:3000/api/v1/catalogues/types/GENDER')
+      .pipe(
+        timeout(10000),
+        map(res => res.data || res),
+        catchError(this.handleError)
+      );
   }
 }

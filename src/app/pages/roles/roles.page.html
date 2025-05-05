@@ -1,13 +1,37 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>roles</ion-title>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Gestión de Roles</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">roles</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <ion-card *ngIf="cargando">
+    <ion-card-content>Cargando usuarios y roles...</ion-card-content>
+  </ion-card>
+  <ion-card *ngIf="!cargando">
+    <ion-card-header>
+      <ion-card-title>Usuarios y Roles</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let usuario of usuarios">
+          <ion-label>
+            <h2>{{ usuario.name }} {{ usuario.lastname }}</h2>
+            <p>{{ usuario.email }} ({{ usuario.username }})</p>
+          </ion-label>
+          <ion-select
+            [multiple]="true"
+            [value]="rolesSeleccionados(usuario)"
+            (ionChange)="onRolesChange(usuario, $event.detail.value)"
+            interface="popover"
+            placeholder="Asignar roles">
+            <ion-select-option *ngFor="let rol of roles" [value]="rol.id">{{ rol.name }}</ion-select-option>
+          </ion-select>
+          <ion-button color="success" (click)="guardarRoles(usuario)" size="small" class="ion-margin-start">
+            Guardar
+          </ion-button>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
 </ion-content>
