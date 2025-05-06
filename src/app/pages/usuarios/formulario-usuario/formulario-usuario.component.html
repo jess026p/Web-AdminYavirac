@@ -115,17 +115,15 @@
                   <ion-col size="12" size-md="6">
                     <ion-item>
                       <ion-label position="stacked">Fecha de nacimiento*</ion-label>
-                      <ion-input readonly [value]="form.value.birthdate | date:'yyyy-MM-dd'" (click)="mostrarSelectorFecha = true" (ionInput)="userForm.get('birthdate')?.markAsTouched()"></ion-input>
+                      <ion-input 
+                        type="date" 
+                        formControlName="birthdate" 
+                        (ionInput)="userForm.get('birthdate')?.markAsTouched()"
+                        [value]="form.value.birthdate | date:'yyyy-MM-dd'">
+                      </ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('birthdate')?.invalid && (userForm.get('birthdate')?.dirty || userForm.get('birthdate')?.touched) && userForm.get('birthdate')?.hasError('required')">
                         La fecha de nacimiento es obligatoria
                       </ion-note>
-                    </ion-item>
-                    <ion-item *ngIf="mostrarSelectorFecha">
-                      <ion-datetime
-                        formControlName="birthdate"
-                        presentation="date"
-                        (ionChange)="mostrarSelectorFecha = false">
-                      </ion-datetime>
                     </ion-item>
                   </ion-col>
                 </ion-row>

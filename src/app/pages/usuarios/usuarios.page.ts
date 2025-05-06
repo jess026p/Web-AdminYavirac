@@ -53,26 +53,10 @@ export class UsuariosPage implements OnInit {
   }
 
   async abrirFormulario(usuario?: Usuario) {
-    let roles: Role[] = [];
-
-    try {
-      const rolesData: any = await firstValueFrom(this.usuariosService.obtenerRoles());
-      console.log("Roles obtenidos del servidor:", rolesData);
-      roles = Array.isArray(rolesData) ? rolesData : rolesData?.data || [];
-    } catch (error) {
-      console.error('Error al cargar roles:', error);
-      roles = [
-        { id: '1', name: 'Administrador', code: 'admin' },
-        { id: '2', name: 'Empleado', code: 'employee' }
-      ];
-      this.mostrarMensaje('No se pudieron cargar los roles del servidor', 'warning');
-    }
-
     const modal = await this.modalController.create({
       component: FormularioUsuarioComponent,
       componentProps: {
         usuario: usuario ?? null,
-        roles: roles,
         editMode: !!usuario
       },
       showBackdrop: true,

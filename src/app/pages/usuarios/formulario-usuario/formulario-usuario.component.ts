@@ -15,12 +15,10 @@ import { Usuario, Role, UsuariosService } from 'src/app/services/usuarios.servic
 export class FormularioUsuarioComponent implements OnInit {
   @Input() usuario: Usuario | null = null;
   @Input() editMode: boolean = false;
-  @Input() roles: Role[] = [];
 
   form!: FormGroup;
   catalogosIdentificacion: any[] = [];
   catalogosGenero: any[] = [];
-  mostrarSelectorFecha = false;
 
   get userForm(): FormGroup {
     return this.form;
@@ -52,7 +50,6 @@ export class FormularioUsuarioComponent implements OnInit {
       password: '',
       identification: '',
       identificationType: this.catalogosIdentificacion[0] || null,
-      roles: [],
       passwordChanged: true,
       gender: null,
       birthdate: null,

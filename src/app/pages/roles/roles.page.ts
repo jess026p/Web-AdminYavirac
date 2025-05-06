@@ -56,12 +56,18 @@ export class RolesPage implements OnInit {
     const loading = await this.loadingController.create({ message: 'Guardando roles...' });
     await loading.present();
     try {
-      const usuarioSinId = { ...usuario };
-      delete usuarioSinId.id;
-      await this.usuariosService.actualizarUsuario(usuario.id, usuarioSinId).toPromise();
+      // Obtener solo los IDs de los roles
+      const rolesIds = usuario.roles?.map(rol => rol.id) || [];
+      
+      console.log('Roles a actualizar:', rolesIds);
+      
+      await this.usuariosService.actualizarRolesUsuario(usuario.id, rolesIds).toPromise();
       this.mostrarMensaje('Roles actualizados correctamente', 'success');
     } catch (error) {
-      this.mostrarMensaje('Error al actualizar roles', 'danger');
+      console.error('Error al actualizar roles:', error);
+      const errorMessage = (error as any)?.error?.message || 'Error desconocido';
+      console.error('Mensaje de error completo:', errorMessage);
+      this.mostrarMensaje('Error al actualizar roles: ' + errorMessage, 'danger');
     }
     loading.dismiss();
   }

@@ -112,6 +112,15 @@ export class UsuariosService {
       );
   }
 
+  actualizarRolesUsuario(id: string, roles: string[]): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.apiUrl}/${id}/roles`, { roles })
+      .pipe(
+        timeout(10000),
+        tap(response => console.log('Roles actualizados:', response)),
+        catchError(this.handleError)
+      );
+  }
+
   eliminarUsuario(id: string | number): Observable<any> {
     if (id === undefined) {
       return throwError(() => new Error('No se puede eliminar un usuario sin ID'));

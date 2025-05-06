@@ -20,11 +20,11 @@
             <p>{{ usuario.email }} ({{ usuario.username }})</p>
           </ion-label>
           <ion-select
-            [multiple]="true"
-            [value]="rolesSeleccionados(usuario)"
-            (ionChange)="onRolesChange(usuario, $event.detail.value)"
+            [multiple]="false"
+            [value]="rolesSeleccionados(usuario)[0]"
+            (ionChange)="onRolesChange(usuario, [$event.detail.value])"
             interface="popover"
-            placeholder="Asignar roles">
+            placeholder="Asignar rol">
             <ion-select-option *ngFor="let rol of roles" [value]="rol.id">{{ rol.name }}</ion-select-option>
           </ion-select>
           <ion-button color="success" (click)="guardarRoles(usuario)" size="small" class="ion-margin-start">
