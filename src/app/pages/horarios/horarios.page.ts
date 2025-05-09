@@ -8,7 +8,7 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import VectorSource from 'ol/source/Vector';
@@ -128,10 +128,16 @@ export class HorariosPage implements OnInit {
     }
     this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
     this.paso++;
+    if (this.paso === 3) {
+      setTimeout(() => this.inicializarMapa(), 500);
+    }
   }
 
   anteriorPaso() {
     this.paso--;
+    if (this.paso === 3) {
+      setTimeout(() => this.inicializarMapa(), 500);
+    }
   }
 
   guardarAsignacion() {
@@ -335,104 +341,109 @@ export class HorariosPage implements OnInit {
   }
 
   inicializarMapa() {
-    const intentarInicializar = (intentosRestantes = 10) => {
-      const mapElement = document.getElementById('map');
-      if (!mapElement) {
-        if (intentosRestantes > 0) {
-          setTimeout(() => intentarInicializar(intentosRestantes - 1), 100);
-        } else {
-          console.error('Elemento del mapa no encontrado después de varios intentos');
-        }
-        return;
-      }
-      // Limpiar mapa anterior si existe
-      if (this.map) {
-        this.map.setTarget(null);
-      }
-      this.vectorSource = new VectorSource();
-      this.vectorLayer = new VectorLayer({
-        source: this.vectorSource
-      });
-      this.map = new Map({
-        target: mapElement,
-        layers: [
-          new TileLayer({
-            source: new OSM(),
-          }),
-          this.vectorLayer
-        ],
-        view: new View({
-          center: fromLonLat([-78.5123274, -0.2201641]), // Quito por defecto
-          zoom: 15
-        })
-      });
-
-      // Función para actualizar el círculo
-      const actualizarCirculo = (lon: number, lat: number) => {
-        if (this.circle) {
-          this.vectorSource.removeFeature(this.circle);
-        }
-        this.circle = new Feature({
-          geometry: new OlCircle([lon, lat], this.radioUbicacion || 100)
-        });
-        this.circle.setStyle(new Style({
-          stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
-          fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
-        }));
-        this.vectorSource.addFeature(this.circle);
-      };
-
-      this.map.on('click', async (evt: any) => {
-        const coords = evt.coordinate;
-        const [lon, lat] = this.map.getCoordinateFromPixel(evt.pixel);
-        this.ubicacionSeleccionada = { lat, lng: lon };
-        this.vectorSource.clear();
-        // Marcador
-        this.marker = new Feature({
-          geometry: new Point([lon, lat])
-        });
-        this.marker.setStyle(new Style({
-          image: new Icon({
-            src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            scale: 0.05
-          })
-        }));
-        this.vectorSource.addFeature(this.marker);
-        // Círculo de radio
-        actualizarCirculo(lon, lat);
-        // Geocodificación inversa para obtener la dirección textual
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-          const data = await response.json();
-          if (data && data.display_name) {
-            this.direccionRealSeleccionada = data.display_name;
-          } else {
-            this.direccionRealSeleccionada = '';
-          }
-          console.log('Dirección seleccionada:', this.direccionRealSeleccionada);
-          this.cdr.detectChanges();
-        } catch (error) {
-          this.direccionRealSeleccionada = '';
-          this.cdr.detectChanges();
-        }
-      });
-
-      // Observar cambios en el radio
-      const radioInput = document.querySelector('ion-input[name="radioUbicacion"]');
-      if (radioInput) {
-        radioInput.addEventListener('ionChange', (event: any) => {
-          if (this.ubicacionSeleccionada && this.marker) {
-            const [lon, lat] = this.marker.getGeometry().getCoordinates();
-            actualizarCirculo(lon, lat);
-          }
-        });
-      }
-
+    const mapElement = document.getElementById('map');
+    console.log('¿Existe el div del mapa?', !!mapElement);
+    if (!mapElement) {
+      setTimeout(() => this.inicializarMapa(), 100);
+      return;
+    }
+    if (this.map) {
       setTimeout(() => {
         this.map.updateSize();
       }, 200);
-    };
-    intentarInicializar();
+      return;
+    }
+    this.vectorSource = new VectorSource();
+    this.vectorLayer = new VectorLayer({
+      source: this.vectorSource
+    });
+    this.map = new Map({
+      target: mapElement,
+      layers: [
+        new TileLayer({
+          source: new OSM(),
+        }),
+        this.vectorLayer
+      ],
+      view: new View({
+        center: fromLonLat([-78.5123274, -0.2201641]),
+        zoom: 15
+      })
+    });
+
+    // Evento click SOLO UNA VEZ
+    this.map.on('click', async (evt: any) => {
+      // Guarda la ubicación en grados decimales
+      const [lon, lat] = toLonLat(evt.coordinate);
+      this.ubicacionSeleccionada = { lat, lng: lon };
+      this.vectorSource.clear();
+
+      // Dibuja el marcador y el círculo usando evt.coordinate (EPSG:3857)
+      this.marker = new Feature({
+        geometry: new Point(evt.coordinate)
+      });
+      this.marker.setStyle(new Style({
+        image: new Icon({
+          src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+          scale: 0.05
+        })
+      }));
+      this.vectorSource.addFeature(this.marker);
+
+      if (this.circle) {
+        this.vectorSource.removeFeature(this.circle);
+      }
+      this.circle = new Feature({
+        geometry: new OlCircle(evt.coordinate, this.radioUbicacion || 100)
+      });
+      this.circle.setStyle(new Style({
+        stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+        fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+      }));
+      this.vectorSource.addFeature(this.circle);
+
+      // Geocodificación inversa para obtener la dirección textual
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await response.json();
+        if (data && data.display_name) {
+          this.direccionRealSeleccionada = data.display_name;
+        } else {
+          this.direccionRealSeleccionada = '';
+        }
+        this.cdr.detectChanges();
+      } catch (error) {
+        this.direccionRealSeleccionada = '';
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Después de crear el mapa y fuera del evento click, agrega este listener:
+    const radioInput = document.querySelector('ion-input[name="radioUbicacion"]');
+    if (radioInput) {
+      radioInput.addEventListener('ionChange', (event: any) => {
+        if (this.ubicacionSeleccionada && this.marker) {
+          // Dibuja el círculo con el nuevo radio
+          if (this.circle) {
+            this.vectorSource.removeFeature(this.circle);
+          }
+          // Convierte la ubicación seleccionada a la proyección del mapa
+          const coords = fromLonLat([this.ubicacionSeleccionada.lng, this.ubicacionSeleccionada.lat]);
+          this.circle = new Feature({
+            geometry: new OlCircle(coords, this.radioUbicacion || 100)
+          });
+          this.circle.setStyle(new Style({
+            stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+            fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+          }));
+          this.vectorSource.addFeature(this.circle);
+        }
+      });
+    }
+
+    setTimeout(() => {
+      this.map.updateSize();
+    }, 200);
   }
 
   toggleDia(dia: number) {
@@ -489,7 +500,9 @@ export class HorariosPage implements OnInit {
   abrirSelectorUbicacion(i: number) {
     this.indiceHorarioUbicacion = i;
     this.mostrarMapaUbicacion = true;
-    setTimeout(() => this.inicializarMapa(), 300);
+    setTimeout(() => {
+      this.inicializarMapa();
+    }, 600);
   }
 
   cerrarSelectorUbicacion() {
