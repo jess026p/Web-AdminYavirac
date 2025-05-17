@@ -61,6 +61,7 @@ export class FormularioUsuarioComponent implements OnInit {
       ...this.usuario,
       password: '' // Nunca mostramos la contraseña real
     };
+    
 
     // Asegura que identificationType sea SIEMPRE un objeto completo del catálogo
     if (initialValues.identificationType && typeof initialValues.identificationType === 'object' && initialValues.identificationType.id) {
@@ -124,11 +125,21 @@ export class FormularioUsuarioComponent implements OnInit {
     const rawData = this.form.value;
     const usuarioData: any = {
       ...rawData,
-      identificationType: typeof rawData.identificationType === 'object' && rawData.identificationType !== null
-        ? rawData.identificationType.id
-        : rawData.identificationType,
-      gender: rawData.gender,
-      birthdate: rawData.birthdate ? rawData.birthdate.split('T')[0] : null,
+      identificationType: rawData.identificationType ?? (this.usuario?.identificationType ?? null),
+      gender: rawData.gender ?? (this.usuario?.gender ?? null),
+      birthdate: rawData.birthdate ? (() => {
+        // Si la fecha viene en formato string DD-MM-YYYY
+        if (typeof rawData.birthdate === 'string' && rawData.birthdate.includes('-')) {
+          const [day, month, year] = rawData.birthdate.split('-');
+          return `${year}-${month}-${day}`;
+        }
+        // Si viene como objeto Date
+        const date = new Date(rawData.birthdate);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      })() : null,
       cellPhone: rawData.cellPhone || null
     };
 

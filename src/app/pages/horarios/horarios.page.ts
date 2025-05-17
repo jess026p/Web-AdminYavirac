@@ -15,16 +15,18 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import { Circle as OlCircle } from 'ol/geom';
+import { UserFilterPipe } from './user-filter.pipe';
 
 @Component({
   selector: 'app-horarios',
   templateUrl: './horarios.page.html',
   styleUrls: ['./horarios.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ReactiveFormsModule]
+  imports: [IonicModule, CommonModule, FormsModule, ReactiveFormsModule, UserFilterPipe]
 })
 export class HorariosPage implements OnInit {
   horarios: Horario[] = [];
+  filtroUsuario: string = '';
 
   // Wizard paso a paso
   paso: number = 1;
@@ -50,7 +52,8 @@ export class HorariosPage implements OnInit {
   horaAlmuerzoRegreso: string = '';
   busquedaDireccion: string = '';
   toleranciaInicio: number = 5; // Valor por defecto de 5 minutos
-  toleranciaFin: number = 5; // Valor por defecto de 5 minutos
+  toleranciaFin: number = 10; // Valor por defecto de 10 minutos
+  atrasoPermitido: number = 10; // Valor por defecto de 10 minutos para atraso permitido
 
   asignaciones: any[] = [];
   horariosAgregados: any[] = [];
@@ -170,6 +173,7 @@ export class HorariosPage implements OnInit {
         data.ubicacionLng = horario.ubicacionSeleccionada.lng;
       }
       if (horario.radioUbicacion) data.radioUbicacion = horario.radioUbicacion;
+      if (horario.atrasoPermitido !== undefined) data.atrasoPermitido = horario.atrasoPermitido;
       // created_at, updated_at, deleted_at son manejados por el backend
       console.log('Payload enviado al backend:', data);
       this.horariosService.createHorario(data).subscribe({
@@ -194,6 +198,9 @@ export class HorariosPage implements OnInit {
     }
     // Limpiar después de guardar
     this.horariosAgregados = [];
+    this.cargarUsuarios(); // Refresca la lista de usuarios
+    this.usuarioSeleccionado = '';
+    this.usuarioSeleccionadoObj = null;
     this.paso = 1;
     alert('Asignaciones guardadas correctamente.');
   }
@@ -219,7 +226,8 @@ export class HorariosPage implements OnInit {
     this.horaAlmuerzoSalida = '';
     this.horaAlmuerzoRegreso = '';
     this.toleranciaInicio = 5;
-    this.toleranciaFin = 5;
+    this.toleranciaFin = 10;
+    this.atrasoPermitido = 10;
     this.horarioEditandoIndex = null;
     this.mismaUbicacionParaTodos = false;
     this.mostrarMapaUbicacion = false;
@@ -269,7 +277,7 @@ export class HorariosPage implements OnInit {
     this.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
     this.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
     this.toleranciaInicio = horario.toleranciaInicioAntes || 5;
-    this.toleranciaFin = horario.toleranciaFinDespues || 5;
+    this.toleranciaFin = horario.toleranciaFinDespues || 10;
     this.repetirTurno = horario.dias && horario.dias.length > 0;
     this.horarioEditandoIndex = i;
   }
@@ -283,7 +291,18 @@ export class HorariosPage implements OnInit {
     if (this.repetirTurno) {
       dias = [...this.diasSeleccionados];
     } else if (this.fechaInicio) {
-      const diaSemana = new Date(this.fechaInicio).getDay();
+      // Calcular el día de la semana usando el algoritmo de Zeller para evitar usar Date
+      const [yearStr, monthStr, dayStr] = this.fechaInicio.split('-');
+      let y = parseInt(yearStr, 10);
+      let m = parseInt(monthStr, 10);
+      const d = parseInt(dayStr, 10);
+      if (m < 3) {
+        m += 12;
+        y--;
+      }
+      const h = (d + Math.floor((13 * (m + 1)) / 5) + y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400)) % 7;
+      // Zeller: 0=Saturday, 1=Sunday, ..., 6=Friday. Queremos 0=Domingo, 1=Lunes, ...
+      const diaSemana = (h + 6) % 7;
       dias = [diaSemana];
     }
     const horario = {
@@ -299,7 +318,8 @@ export class HorariosPage implements OnInit {
       toleranciaInicioDespues: this.toleranciaInicio,
       toleranciaFinDespues: this.toleranciaFin,
       repetirTurno: this.repetirTurno,
-      fechaFinRepeticion: this.fechaFinRepeticion
+      fechaFinRepeticion: this.fechaFinRepeticion,
+      atrasoPermitido: this.atrasoPermitido
     };
     if (this.horarioEditandoIndex !== null) {
       this.horariosAgregados[this.horarioEditandoIndex] = horario;
@@ -326,7 +346,8 @@ export class HorariosPage implements OnInit {
     this.horaAlmuerzoSalida = '';
     this.horaAlmuerzoRegreso = '';
     this.toleranciaInicio = 5;
-    this.toleranciaFin = 5;
+    this.toleranciaFin = 10;
+    this.atrasoPermitido = 10;
     this.fechaFinRepeticion = '';
     this.horarioEditandoIndex = null;
   }
@@ -499,10 +520,21 @@ export class HorariosPage implements OnInit {
 
   abrirSelectorUbicacion(i: number) {
     this.indiceHorarioUbicacion = i;
-    this.mostrarMapaUbicacion = true;
+    // Si se va a asignar la misma ubicación para todos, no reinicialices el mapa si ya está abierto
+    if (this.mismaUbicacionParaTodos && this.mostrarMapaUbicacion) {
+      return;
+    }
+    this.mostrarMapaUbicacion = false; // Oculta primero para forzar el *ngIf
     setTimeout(() => {
-      this.inicializarMapa();
-    }, 600);
+      this.mostrarMapaUbicacion = true;
+      setTimeout(() => {
+        if (this.map) {
+          this.map.setTarget(null); // Destruye el mapa anterior
+          this.map = null;
+        }
+        this.inicializarMapa();
+      }, 400);
+    }, 100);
   }
 
   cerrarSelectorUbicacion() {
