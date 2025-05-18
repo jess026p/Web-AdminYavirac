@@ -125,28 +125,17 @@ export class FormularioUsuarioComponent implements OnInit {
     const rawData = this.form.value;
     const usuarioData: any = {
       ...rawData,
-      identificationType: rawData.identificationType ?? (this.usuario?.identificationType ?? null),
-      gender: rawData.gender ?? (this.usuario?.gender ?? null),
-      birthdate: rawData.birthdate ? (() => {
-        // Si la fecha viene en formato string DD-MM-YYYY
-        if (typeof rawData.birthdate === 'string' && rawData.birthdate.includes('-')) {
-          const [day, month, year] = rawData.birthdate.split('-');
-          return `${year}-${month}-${day}`;
-        }
-        // Si viene como objeto Date
-        const date = new Date(rawData.birthdate);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      })() : null,
+      // Mantener los valores originales si está en edición
+      identificationType: this.editMode ? (this.usuario?.identificationType ?? rawData.identificationType) : rawData.identificationType,
+      gender: this.editMode ? (this.usuario?.gender ?? rawData.gender) : rawData.gender,
+      // Enviar la fecha tal cual está en el input, sin transformarla
+      birthdate: rawData.birthdate,
       cellPhone: rawData.cellPhone || null
     };
 
     // Eliminar campos que no deben ir en el payload
     if ('id' in usuarioData) delete usuarioData.id;
     if ('genderId' in usuarioData) delete usuarioData.genderId;
-
     if (this.editMode && !usuarioData.password) {
       delete usuarioData.password;
     }

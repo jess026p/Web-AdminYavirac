@@ -153,7 +153,7 @@ export class HorariosPage implements OnInit {
     this.horariosAgregados.forEach(horario => {
       const data: any = {
         userId: this.usuarioSeleccionado,
-        dias: Array.isArray(horario.dias) ? horario.dias.filter((d: number) => d >= 1 && d <= 7) : [],
+        dias: Array.isArray(horario.dias) ? horario.dias.map((d: number) => d === 0 ? 7 : d) : [],
         horaInicio: horario.horaInicio,
         horaFin: horario.horaFin
       };
