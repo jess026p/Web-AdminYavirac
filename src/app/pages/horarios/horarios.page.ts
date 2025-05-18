@@ -360,7 +360,7 @@ export class HorariosPage implements OnInit {
 
   obtenerNombresDias(dias: number[]): string {
     const nombres = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SÁ'];
-    return dias.map(d => nombres[d]).join(', ');
+    return dias.map(d => nombres[d === 7 ? 0 : d] ?? 'Día no válido').join(', ');
   }
 
   inicializarMapa() {
