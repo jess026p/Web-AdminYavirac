@@ -125,10 +125,9 @@ export class FormularioUsuarioComponent implements OnInit {
     const rawData = this.form.value;
     const usuarioData: any = {
       ...rawData,
-      // Mantener los valores originales si está en edición
-      identificationType: this.editMode ? (this.usuario?.identificationType ?? rawData.identificationType) : rawData.identificationType,
-      gender: this.editMode ? (this.usuario?.gender ?? rawData.gender) : rawData.gender,
-      // Enviar la fecha tal cual está en el input, sin transformarla
+      // Si el campo no está en el formulario, usa el valor original (nunca null)
+      identificationType: this.editMode ? (this.usuario?.identificationType) : rawData.identificationType,
+      gender: this.editMode ? (this.usuario?.gender) : rawData.gender,
       birthdate: rawData.birthdate,
       cellPhone: rawData.cellPhone || null
     };

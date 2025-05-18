@@ -280,6 +280,7 @@ export class HorariosPage implements OnInit {
     this.toleranciaFin = horario.toleranciaFinDespues || 10;
     this.repetirTurno = horario.dias && horario.dias.length > 0;
     this.horarioEditandoIndex = i;
+    this.radioUbicacion = horario.radioUbicacion ?? 100;
   }
 
   guardarHorario() {
@@ -319,7 +320,8 @@ export class HorariosPage implements OnInit {
       toleranciaFinDespues: this.toleranciaFin,
       repetirTurno: this.repetirTurno,
       fechaFinRepeticion: this.fechaFinRepeticion,
-      atrasoPermitido: this.atrasoPermitido
+      atrasoPermitido: this.atrasoPermitido,
+      radioUbicacion: this.radioUbicacion
     };
     if (this.horarioEditandoIndex !== null) {
       this.horariosAgregados[this.horarioEditandoIndex] = horario;
@@ -505,6 +507,33 @@ export class HorariosPage implements OnInit {
           const coords = fromLonLat([lon, lat]);
           this.map.getView().setCenter(coords);
           this.map.getView().setZoom(16);
+
+          // Dibuja el puntero y el círculo en la nueva ubicación
+          this.ubicacionSeleccionada = { lat, lng: lon };
+          this.vectorSource.clear();
+
+          this.marker = new Feature({
+            geometry: new Point(coords)
+          });
+          this.marker.setStyle(new Style({
+            image: new Icon({
+              src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+              scale: 0.05
+            })
+          }));
+          this.vectorSource.addFeature(this.marker);
+
+          if (this.circle) {
+            this.vectorSource.removeFeature(this.circle);
+          }
+          this.circle = new Feature({
+            geometry: new OlCircle(coords, this.radioUbicacion || 100)
+          });
+          this.circle.setStyle(new Style({
+            stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+            fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+          }));
+          this.vectorSource.addFeature(this.circle);
         }
       } else {
         alert('Dirección no encontrada');
@@ -549,16 +578,19 @@ export class HorariosPage implements OnInit {
     if (this.indiceHorarioUbicacion === null) return;
     const ubicacion = {
       ubicacionNombre: this.ubicacionNombre,
-      ubicacionSeleccionada: this.ubicacionSeleccionada
+      ubicacionSeleccionada: this.ubicacionSeleccionada,
+      radioUbicacion: this.radioUbicacion
     };
     if (this.mismaUbicacionParaTodos) {
       this.horariosAgregados.forEach(h => {
         h.ubicacionNombre = this.ubicacionNombre;
         h.ubicacionSeleccionada = this.ubicacionSeleccionada;
+        h.radioUbicacion = this.radioUbicacion;
       });
     } else {
       this.horariosAgregados[this.indiceHorarioUbicacion].ubicacionNombre = this.ubicacionNombre;
       this.horariosAgregados[this.indiceHorarioUbicacion].ubicacionSeleccionada = this.ubicacionSeleccionada;
+      this.horariosAgregados[this.indiceHorarioUbicacion].radioUbicacion = this.radioUbicacion;
     }
     this.cerrarSelectorUbicacion();
   }
