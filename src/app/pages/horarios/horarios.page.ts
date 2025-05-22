@@ -16,6 +16,7 @@ import VectorLayer from 'ol/layer/Vector';
 import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import { Circle as OlCircle } from 'ol/geom';
 import { UserFilterPipe } from './user-filter.pipe';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-horarios',
@@ -98,12 +99,26 @@ export class HorariosPage implements OnInit {
   constructor(
     private horariosService: HorariosService,
     private usuariosService: UsuariosService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
     this.cargarUsuarios();
     this.cargarHorarios();
+    // Leer el parámetro userId de la URL
+    this.route.queryParams.subscribe(params => {
+      const userId = params['userId'];
+      if (userId) {
+        this.usuarioSeleccionado = userId;
+        this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === userId) || null;
+        // Si tienes un método para cargar los horarios de ese usuario, puedes llamarlo aquí
+        // Por ejemplo: this.cargarHorariosDeUsuario(userId);
+        // Si usas un wizard, puedes avanzar al paso de edición automáticamente:
+        this.paso = 2;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   cargarUsuarios() {

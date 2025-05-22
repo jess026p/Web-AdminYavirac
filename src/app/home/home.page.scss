@@ -1,16 +1,3 @@
-/* === FONDO GENERAL === */
-.fondo-personalizado {
-  --background: linear-gradient(to bottom, rgb(177, 197, 237), #03266e);
-  min-height: 100%;
-}
-
-/* === AJUSTE DEL CONTENIDO === */
-ion-content {
-  padding-top: 24px;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-}
-
 /* === TARJETA ADMIN PANEL === */
 .panel-admin-glass {
   background: rgba(255, 255, 255, 0.64);
@@ -18,7 +5,7 @@ ion-content {
   -webkit-backdrop-filter: blur(14px);
   border-radius: 20px;
   box-shadow: 0 8px 8px rgb(101, 96, 96);
-  padding: 24px;
+  padding: 30px;
   min-height: 580px;
   transition: all 0.3s ease-in-out;
 }
@@ -80,4 +67,124 @@ ion-button[color="medium"] {
   margin-top: 16px;
 }
 /***/
+
+
+.tarjetas-usuarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.tarjeta-usuario {
+  max-width: 100%;
+  box-shadow: 0 5px 9px #0002;
+  border-radius: 16px;
+  transition: box-shadow 0.2s;
+  padding: 8px 0 12px 0;
+  background: #f1e4e476;
+
+}
+.tarjeta-usuario:hover {
+  box-shadow: 0 4px 16px #0003;
+}
+
+.avatar-usuario {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 12px auto 0 auto;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e0e0e0;
+}
+.avatar-usuario img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nombre-usuario-tarjeta {
+  text-align: center;
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 8px 0 0 0;
+}
+
+.botones-tarjeta {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.botones-tarjeta ion-button {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 11px;
+  --padding-start: 0.3em;
+  --padding-end: 0.3em;
+  --border-radius: 8px;
+  height: 32px;
+}
+
+ion-button.color-azul-personalizado {
+  --background: #3c87ff;
+  --color: #fff;
+}
+ion-button.color-naranja-personalizado {
+  --background: #f98958;
+  --color: #fff;
+}
+
+.fondo-modal-asistencia {
+  background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
+  min-height: 100%;
+}
+
+.modal-asistencia-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.nombre-usuario-modal {
+  font-size: 1.3em;
+  font-weight: 700;
+  text-align: left;
+  margin: 0;
+}
+
+.fecha-actual-modal {
+  font-size: 1em;
+  color: #555;
+  text-align: right;
+}
+
+.cuadros-resumen-modal {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cuadro-azul, .cuadro-verde, .cuadro-rojo {
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  font-size: 1em;
+  min-width: 180px;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.cuadro-azul { background-color: #1565c0; }
+.cuadro-verde { background-color: #2e7d32; }
+.cuadro-rojo { background-color: #b71c1c; }
 

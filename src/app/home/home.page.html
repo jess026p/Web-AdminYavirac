@@ -1,69 +1,232 @@
-
 <ion-content class="fondo-personalizado">
   <div class="ion-padding">
     <ion-card class="panel-admin-glass">
       <ion-card-content>
 
-        <!-- Encabezado con título a la izquierda y buscador a la derecha -->
+        <!-- Encabezado con buscador -->
         <div class="cabecera-admin">
           <h2 class="titulo-admin">Administrador</h2>
-          <ion-searchbar
-            placeholder="Buscar usuarios"
-            [(ngModel)]="busqueda"
-            (ionInput)="buscarUsuario()"
-            class="buscador"
-          ></ion-searchbar>
+          <div class="busqueda-usuarios ion-margin-bottom">
+            <ion-searchbar
+              placeholder="Buscar por nombre, apellido o cédula"
+              [(ngModel)]="filtroBusqueda"
+              (ionInput)="filtrarUsuarios()"
+              showClearButton="always"
+            ></ion-searchbar>
+          </div>
         </div>
 
-        <!-- Panel del usuario -->
-        <div class="info-usuario">
-          <h3>Usuario: {{ usuario.nombre }}</h3>
-          <ion-grid>
-            <ion-row>
-              <ion-col>
-                <div class="box box-azul">
-                  Días laborados en abril: {{ usuario.diasLaborados }}
-                </div>
-              </ion-col>
-              <ion-col>
-                <div class="box box-verde">
-                  Faltas sin justificación: {{ usuario.faltas }}
-                </div>
-              </ion-col>
-              <ion-col>
-                <div class="box box-rojo">
-                  Atrasos: {{ usuario.atrasos }}
-                </div>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-
-          <ion-grid class="ion-margin-top">
-            <ion-row class="ion-text-center">
-              <ion-col><strong>Estado</strong></ion-col>
-              <ion-col><strong>Entrada</strong></ion-col>
-              <ion-col><strong>Salida</strong></ion-col>
-              <ion-col><strong>Mapa</strong></ion-col>
-            </ion-row>
-
-            <ion-row *ngFor="let registro of usuario.registros" class="ion-text-center">
-              <ion-col>
-                <ion-badge color="success">{{ registro.estado }}</ion-badge>
-              </ion-col>
-              <ion-col>{{ registro.entrada }}</ion-col>
-              <ion-col>{{ registro.salida || '-' }}</ion-col>
-              <ion-col>
-                <ion-icon name="location-outline" size="large"></ion-icon>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-
-          <ion-button expand="block" fill="solid" color="medium">
-            Ver Historial de registro
-          </ion-button>
+        <!-- Visualizador de fecha actual -->
+        <div class="ion-text-end" style="margin-bottom: 10px;">
+          <ion-label color="medium"><strong>Fecha actual:</strong> {{ fechaActual }}</ion-label>
         </div>
+
+        <!-- Lista de selección de usuarios -->
+        <div *ngIf="mostrarSeleccion" class="seleccion-usuarios ion-padding-bottom">
+          <h4 class="ion-text-center">Selecciona un usuario:</h4>
+          <ion-list lines="full">
+            <ion-item button detail *ngFor="let u of usuariosEncontrados" (click)="obtenerResumenAsistencia(u.id)">
+              <ion-avatar slot="start">
+                <ion-icon name="person-circle-outline" style="font-size: 2.2em;"></ion-icon>
+              </ion-avatar>
+              <ion-label>
+                <strong>{{ u.name }} {{ u.lastname }}</strong><br>
+                <span style="font-size: 13px; color: #666;">Cédula: {{ u.identification }}</span>
+                <span *ngIf="u.email" style="font-size: 12px; color: #888; display: block;">{{ u.email }}</span>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <!-- Mostrar mensaje si no hay usuario cargado -->
+        <div *ngIf="!usuario && !buscando" class="ion-text-center ion-padding-top">
+          <p>Ingrese una cédula o nombre para buscar un usuario</p>
+        </div>
+
+        <!-- Panel de información del usuario -->
+      
+
+        <div class="tarjetas-usuarios-grid">
+          <ion-card *ngFor="let usuario of usuariosFiltrados" class="tarjeta-usuario">
+            <ion-avatar class="avatar-usuario">
+              <img [src]="usuario.foto || 'assets/avatar-default.png'" alt="Foto de {{ usuario.nombre || usuario.name }}">
+            </ion-avatar>
+            <ion-card-header>
+              <ion-card-title class="nombre-usuario-tarjeta">{{ usuario.nombre || usuario.name }} {{ usuario.apellido || usuario.lastname }}</ion-card-title>
+              <ion-card-subtitle class="ion-text-center">Cédula: {{ usuario.cedula || usuario.identification }}</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="botones-tarjeta">
+                <ion-button class="color-azul-personalizado" (click)="verAsistencia(usuario)">
+                  <ion-icon name="document-text-outline" slot="start"></ion-icon>
+                  <span style="font-size: 13px;">Ver asistencia</span>
+                </ion-button>
+                <ion-button class="color-naranja-personalizado" (click)="verHorarios(usuario)">
+                  <ion-icon name="calendar-outline" slot="start"></ion-icon>
+                  <span style="font-size: 13px;">Horarios</span>
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <!-- Modal de asistencia -->
+        <ion-modal *ngIf="mostrarModalAsistencia" [isOpen]="mostrarModalAsistencia" (didDismiss)="cerrarModalAsistencia()">
+          <ng-template>
+            <ion-header>
+              <ion-toolbar color="primary">
+                <ion-title>Resumen de Asistencia</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button (click)="cerrarModalAsistencia()">Cerrar</ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding fondo-modal-asistencia">
+              <div class="modal-asistencia-header">
+                <h2 class="nombre-usuario-modal">
+                  {{ usuarioSeleccionado?.nombre || usuarioSeleccionado?.name }} {{ usuarioSeleccionado?.apellido || usuarioSeleccionado?.lastname }}
+                </h2>
+                <div class="fecha-actual-modal">
+                  <strong>Fecha actual:</strong> {{ fechaActual }}
+                </div>
+              </div>
+              <div class="cuadros-resumen-modal">
+                <div class="cuadro-azul">
+                  <ion-icon name="calendar-number-outline" class="icono-cuadro"></ion-icon>
+                  Días laborados en {{ mesActual }}: <strong>{{ resumenAsistencia.dias_laborados }}</strong>
+                </div>
+                <div class="cuadro-verde">
+                  <ion-icon name="close-circle-outline" class="icono-cuadro"></ion-icon>
+                  Faltas sin justificación: <strong>{{ resumenAsistencia.faltas_sin_justificacion }}</strong>
+                </div>
+                <div class="cuadro-rojo">
+                  <ion-icon name="alarm-outline" class="icono-cuadro"></ion-icon>
+                  Atrasos: <strong>{{ resumenAsistencia.atrasos }}</strong>
+                </div>
+              </div>
+              <div class="panel-marcacion-modal">
+                <ion-grid class="ion-margin-top">
+                  <ion-row class="ion-text-center">
+                    <ion-col><strong></strong></ion-col>
+                    <ion-col><strong>Estado</strong></ion-col>
+                    <ion-col><strong>Hora</strong></ion-col>
+                    <ion-col><strong>Motivo</strong></ion-col>
+                    <ion-col><strong>Mapa</strong></ion-col>
+                  </ion-row>
+                  <ion-row class="ion-text-center">
+                    <ion-col><strong>Entrada</strong></ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.estado_entrada || '-' }}</ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.hora_entrada || '-' }}</ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.motivo_entrada || '-' }}</ion-col>
+                    <ion-col>
+                      <ion-button fill="clear" size="small" *ngIf="resumenAsistencia.registro_hoy?.lat_entrada && resumenAsistencia.registro_hoy?.lng_entrada" (click)="abrirMapa({lat: resumenAsistencia.registro_hoy.lat_entrada, lng: resumenAsistencia.registro_hoy.lng_entrada})">
+                        <ion-icon name="location-outline" size="large"></ion-icon>
+                      </ion-button>
+                      <ion-icon *ngIf="!(resumenAsistencia.registro_hoy?.lat_entrada && resumenAsistencia.registro_hoy?.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
+                    </ion-col>
+                  </ion-row>
+                  <ion-row class="ion-text-center">
+                    <ion-col><strong>Salida</strong></ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.estado_salida || '-' }}</ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.hora_salida || '-' }}</ion-col>
+                    <ion-col>{{ resumenAsistencia.registro_hoy?.motivo_salida || '-' }}</ion-col>
+                    <ion-col>
+                      <ion-button fill="clear" size="small" *ngIf="resumenAsistencia.registro_hoy?.lat_salida && resumenAsistencia.registro_hoy?.lng_salida" (click)="abrirMapa({lat: resumenAsistencia.registro_hoy.lat_salida, lng: resumenAsistencia.registro_hoy.lng_salida})">
+                        <ion-icon name="location-outline" size="large"></ion-icon>
+                      </ion-button>
+                      <ion-icon *ngIf="!(resumenAsistencia.registro_hoy?.lat_salida && resumenAsistencia.registro_hoy?.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </div>
+              <ion-button expand="block" color="medium" (click)="verHistorial()">
+                {{ mostrarHistorial ? 'OCULTAR HISTORIAL' : 'VER HISTORIAL DE REGISTRO' }}
+              </ion-button>
+              <div *ngIf="mostrarHistorial" class="contenedor-historial-home ion-margin-top">
+                <ion-list>
+                  <ion-item *ngFor="let registro of historialRegistros">
+                    <ion-label>
+                      <strong>{{ registro.fecha }}<span *ngIf="registro.hora_asignada"> - {{ registro.hora_asignada }}</span></strong><br>
+                      <ion-grid>
+                        <ion-row class="ion-text-center">
+                          <ion-col><strong></strong></ion-col>
+                          <ion-col><strong>Estado</strong></ion-col>
+                          <ion-col><strong>Hora</strong></ion-col>
+                          <ion-col><strong>Motivo</strong></ion-col>
+                          <ion-col><strong>Mapa</strong></ion-col>
+                        </ion-row>
+                        <ion-row class="ion-text-center">
+                          <ion-col><strong>Entrada</strong></ion-col>
+                          <ion-col>{{ registro.estado_entrada || '-' }}</ion-col>
+                          <ion-col>{{ registro.hora_entrada || '-' }}</ion-col>
+                          <ion-col>{{ registro.motivo_entrada || '-' }}</ion-col>
+                          <ion-col>
+                            <ng-container *ngIf="registro.lat_entrada && registro.lng_entrada">
+                              <ion-button fill="clear" size="small" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})">
+                                <ion-icon name="location-outline" size="large"></ion-icon>
+                              </ion-button>
+                              <span class="direccion-marcacion" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})" style="cursor:pointer; color:#1976d2; font-size:12px; margin-left:4px;" title="Ver en el mapa">
+                                {{ registro.direccion_entrada || 'Cargando...' }}
+                              </span>
+                            </ng-container>
+                            <ion-icon *ngIf="!(registro.lat_entrada && registro.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
+                          </ion-col>
+                        </ion-row>
+                        <ion-row class="ion-text-center">
+                          <ion-col><strong>Salida</strong></ion-col>
+                          <ion-col>{{ registro.estado_salida || '-' }}</ion-col>
+                          <ion-col>{{ registro.hora_salida || '-' }}</ion-col>
+                          <ion-col>{{ registro.motivo_salida || '-' }}</ion-col>
+                          <ion-col>
+                            <ng-container *ngIf="registro.lat_salida && registro.lng_salida">
+                              <ion-button fill="clear" size="small" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})">
+                                <ion-icon name="location-outline" size="large"></ion-icon>
+                              </ion-button>
+                              <span class="direccion-marcacion" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})" style="cursor:pointer; color:#1976d2; font-size:12px; margin-left:4px;" title="Ver en el mapa">
+                                {{ registro.direccion_salida || 'Cargando...' }}
+                              </span>
+                            </ng-container>
+                            <ion-icon *ngIf="!(registro.lat_salida && registro.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
+                          </ion-col>
+                        </ion-row>
+                      </ion-grid>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-content>
+          </ng-template>
+        </ion-modal>
+
+        <!-- Modal de horarios -->
+        <ion-modal *ngIf="mostrarModalHorarios" [isOpen]="mostrarModalHorarios" (didDismiss)="cerrarModalHorarios()">
+          <ng-template>
+            <ion-header>
+              <ion-toolbar color="secondary">
+                <ion-title>Horarios de {{ usuarioSeleccionado?.nombre || usuarioSeleccionado?.name }}</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button (click)="cerrarModalHorarios()">Cerrar</ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <ion-list *ngIf="horariosUsuario.length > 0">
+                <ion-item *ngFor="let horario of horariosUsuario">
+                  <ion-label>
+                    <strong>{{ horario.nombreTurno || 'Horario' }}</strong><br>
+                    {{ horario.horaInicio }} - {{ horario.horaFin }}<br>
+                    Días: {{ horario.dias?.join(', ') }}
+                  </ion-label>
+                  <ion-button color="primary" (click)="editarHorario(horario)">Editar horario</ion-button>
+                </ion-item>
+              </ion-list>
+              <div *ngIf="horariosUsuario.length === 0" class="ion-text-center ion-padding">
+                <p>No hay horarios asignados.</p>
+              </div>
+            </ion-content>
+          </ng-template>
+        </ion-modal>
       </ion-card-content>
     </ion-card>
   </div>
 </ion-content>
-
