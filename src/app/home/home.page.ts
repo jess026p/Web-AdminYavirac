@@ -42,6 +42,24 @@ export class HomePage implements OnInit {
   filtroBusqueda: string = '';
   usuariosFiltrados: any[] = [];
   mesActual: string = '';
+  mesSeleccionado: number = new Date().getMonth() + 1;
+  anioSeleccionado: number = new Date().getFullYear();
+  diasNombre: any = {
+    0: 'Domingo',
+    1: 'Lunes',
+    2: 'Martes',
+    3: 'Miércoles',
+    4: 'Jueves',
+    5: 'Viernes',
+    6: 'Sábado',
+    'Domingo': 'Domingo',
+    'Lunes': 'Lunes',
+    'Martes': 'Martes',
+    'Miércoles': 'Miércoles',
+    'Jueves': 'Jueves',
+    'Viernes': 'Viernes',
+    'Sábado': 'Sábado'
+  };
 
   constructor(
     private http: HttpClient, 
@@ -89,11 +107,8 @@ export class HomePage implements OnInit {
 
   async verAsistencia(usuario: any) {
     try {
-      const fecha = new Date();
-      const mes = fecha.getMonth() + 1; // Mes actual (1-12)
-      const anio = fecha.getFullYear(); // Año actual
       const res = await firstValueFrom(
-        this.http.get<any>(`http://localhost:3000/api/v1/asistencias/resumen/${usuario.id}?mes=${mes}&anio=${anio}`)
+        this.http.get<any>(`http://localhost:3000/api/v1/asistencias/resumen/${usuario.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
       );
       this.resumenAsistencia = res.data;
       this.usuarioSeleccionado = usuario;
@@ -105,8 +120,9 @@ export class HomePage implements OnInit {
 
   async verHorarios(usuario: any) {
     try {
+      this.horariosUsuario = [];
       const res = await firstValueFrom(
-        this.http.get<any>(`http://localhost:3000/api/v1/horarios?userId=${usuario.id}`)
+        this.http.get<any>(`http://localhost:3000/api/v1/horarios/user/${usuario.id}/locations`)
       );
       this.horariosUsuario = res.data || res;
       this.usuarioSeleccionado = usuario;
@@ -130,7 +146,11 @@ export class HomePage implements OnInit {
   }
 
   editarHorario(horario: any) {
-    this.router.navigate(['/horarios'], { queryParams: { userId: this.usuarioSeleccionado.id, horarioId: horario.id } });
+    const userId = this.usuarioSeleccionado?.id || horario.userId;
+    this.cerrarModalHorarios();
+    setTimeout(() => {
+      this.router.navigateByUrl('/layout/horarios?userId=' + userId + '&horarioId=' + horario.id);
+    }, 100);
   }
 
   async verHistorial() {
@@ -142,10 +162,9 @@ export class HomePage implements OnInit {
     if (this.mostrarHistorial && this.historialRegistros.length === 0) {
       try {
         const res = await firstValueFrom(
-          this.http.get<any>(`http://localhost:3000/api/v1/asistencias/historial/${this.usuarioSeleccionado.id}`)
+          this.http.get<any>(`http://localhost:3000/api/v1/asistencias/historial/${this.usuarioSeleccionado.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
         );
         this.historialRegistros = res.data || [];
-        // Obtener direcciones para cada registro
         for (const registro of this.historialRegistros) {
           if (registro.lat_entrada && registro.lng_entrada) {
             registro.direccion_entrada = await this.obtenerDireccion(registro.lat_entrada, registro.lng_entrada);
@@ -243,5 +262,19 @@ export class HomePage implements OnInit {
     } catch (e) {
       return 'Dirección no encontrada';
     }
+  }
+
+  onFiltroMesAnioChange() {
+    this.verAsistencia(this.usuarioSeleccionado);
+    if (this.mostrarHistorial) {
+      this.verHistorial();
+    }
+  }
+
+  getDiasTexto(dias: any): string {
+    if (Array.isArray(dias)) {
+      return dias.map((d: any) => this.diasNombre[d] || d).join(', ');
+    }
+    return this.diasNombre[dias] || dias || '-';
   }
 }

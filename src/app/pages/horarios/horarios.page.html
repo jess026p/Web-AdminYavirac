@@ -35,6 +35,9 @@
 
       <!-- Paso 2: Configuración de horario -->
       <div *ngIf="paso === 2">
+        <div *ngIf="ubicacionSeleccionada || ubicacionNombre" class="ion-text-center" style="color:#1976d2; font-weight:bold; margin-bottom:10px;">
+          Estás editando un horario asignado
+        </div>
         <ion-item color="light">
           <ion-label>
             <strong>Asignando horario a:</strong>
@@ -84,7 +87,7 @@
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Fin de turno</ion-label>
-              <ion-input type="date" [(ngModel)]="fechaFin" name="fechaFin" placeholder="Selecciona la fecha"></ion-input>
+              <ion-input type="date" [(ngModel)]="fechaFin" name="fechaFin" placeholder="Selecciona la fecha" (ionChange)="validarFechaFin()"></ion-input>
             </ion-item>
             <ion-item>
               <ion-label position="stacked">Hora de fin</ion-label>
@@ -92,7 +95,8 @@
                 type="time"
                 [(ngModel)]="horaFin"
                 name="horaFin"
-                placeholder="Selecciona la hora">
+                placeholder="Selecciona la hora"
+                (ionChange)="validarHoraFin()">
               </ion-input>
             </ion-item>
           </ion-col>

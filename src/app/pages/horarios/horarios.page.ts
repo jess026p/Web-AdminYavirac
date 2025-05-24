@@ -17,6 +17,7 @@ import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import { Circle as OlCircle } from 'ol/geom';
 import { UserFilterPipe } from './user-filter.pipe';
 import { ActivatedRoute } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-horarios',
@@ -106,19 +107,109 @@ export class HorariosPage implements OnInit {
   ngOnInit() {
     this.cargarUsuarios();
     this.cargarHorarios();
-    // Leer el parámetro userId de la URL
     this.route.queryParams.subscribe(params => {
       const userId = params['userId'];
+      const horarioId = params['horarioId'];
       if (userId) {
         this.usuarioSeleccionado = userId;
-        this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === userId) || null;
-        // Si tienes un método para cargar los horarios de ese usuario, puedes llamarlo aquí
-        // Por ejemplo: this.cargarHorariosDeUsuario(userId);
-        // Si usas un wizard, puedes avanzar al paso de edición automáticamente:
-        this.paso = 2;
-        this.cdr.detectChanges();
+        // Esperar a que los usuarios estén cargados antes de continuar
+        if (this.usuarios.length > 0) {
+          this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === userId) || null;
+          this.paso = 2;
+          this.cdr.detectChanges();
+          if (horarioId) {
+            this.cargarHorarioParaEdicion(horarioId);
+          }
+        } else {
+          // Si los usuarios aún no están cargados, esperar a que se carguen
+          const checkUsuarios = setInterval(() => {
+            if (this.usuarios.length > 0) {
+              clearInterval(checkUsuarios);
+              this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === userId) || null;
+              this.paso = 2;
+              this.cdr.detectChanges();
+              if (horarioId) {
+                this.cargarHorarioParaEdicion(horarioId);
+              }
+            }
+          }, 100);
+        }
       }
     });
+  }
+
+  async cargarHorarioParaEdicion(horarioId: string) {
+    try {
+      const horario = await this.horariosService.obtenerHorarioPorId(horarioId).toPromise();
+      // Llena los campos del formulario
+      this.nombreTurno = horario.nombreTurno;
+      this.diasSeleccionados = horario.dias || [];
+      this.horaInicio = horario.horaInicio;
+      this.horaFin = horario.horaFin;
+      this.fechaInicio = horario.fechaInicio;
+      this.fechaFin = horario.fechaFin;
+      this.fechaFinRepeticion = horario.fechaFinRepeticion;
+      this.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
+      this.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
+      this.toleranciaInicio = horario.toleranciaInicioAntes || 5;
+      this.toleranciaFin = horario.toleranciaFinDespues || 10;
+      this.repetirTurno = !!horario.repetirTurno && Array.isArray(horario.dias) && horario.dias.length > 1;
+      if (!this.repetirTurno) {
+        this.diasSeleccionados = Array.isArray(horario.dias) && horario.dias.length > 0 ? [horario.dias[0]] : [];
+        this.fechaFinRepeticion = '';
+      }
+      this.atrasoPermitido = horario.atrasoPermitido || 10;
+      this.radioUbicacion = horario.radioUbicacion ?? 100;
+      this.ubicacionNombre = horario.ubicacionNombre || '';
+      this.ubicacionSeleccionada = horario.ubicacionSeleccionada || (horario.ubicacionLat && horario.ubicacionLng ? { lat: horario.ubicacionLat, lng: horario.ubicacionLng } : null);
+
+      // Si ya hay un horario agregado, actualízalo; si no, agrégalo
+      if (this.horariosAgregados.length === 0) {
+        this.horariosAgregados.push({
+          nombreTurno: this.nombreTurno,
+          dias: this.diasSeleccionados,
+          horaInicio: this.horaInicio,
+          horaFin: this.horaFin,
+          fechaInicio: this.fechaInicio,
+          fechaFin: this.fechaFin,
+          fechaFinRepeticion: this.fechaFinRepeticion,
+          horaAlmuerzoSalida: this.horaAlmuerzoSalida,
+          horaAlmuerzoRegreso: this.horaAlmuerzoRegreso,
+          toleranciaInicioAntes: this.toleranciaInicio,
+          toleranciaFinDespues: this.toleranciaFin,
+          repetirTurno: this.repetirTurno,
+          atrasoPermitido: this.atrasoPermitido,
+          radioUbicacion: this.radioUbicacion,
+          ubicacionNombre: this.ubicacionNombre,
+          ubicacionSeleccionada: this.ubicacionSeleccionada
+        });
+        this.horarioEditandoIndex = 0;
+      } else {
+        // Actualiza el primer horario (o el que corresponda)
+        this.horariosAgregados[0] = {
+          nombreTurno: this.nombreTurno,
+          dias: this.diasSeleccionados,
+          horaInicio: this.horaInicio,
+          horaFin: this.horaFin,
+          fechaInicio: this.fechaInicio,
+          fechaFin: this.fechaFin,
+          fechaFinRepeticion: this.fechaFinRepeticion,
+          horaAlmuerzoSalida: this.horaAlmuerzoSalida,
+          horaAlmuerzoRegreso: this.horaAlmuerzoRegreso,
+          toleranciaInicioAntes: this.toleranciaInicio,
+          toleranciaFinDespues: this.toleranciaFin,
+          repetirTurno: this.repetirTurno,
+          atrasoPermitido: this.atrasoPermitido,
+          radioUbicacion: this.radioUbicacion,
+          ubicacionNombre: this.ubicacionNombre,
+          ubicacionSeleccionada: this.ubicacionSeleccionada
+        };
+        this.horarioEditandoIndex = 0;
+      }
+      this.cdr.detectChanges();
+    } catch (e) {
+      alert('No se pudo cargar el horario para edición');
+    }
   }
 
   cargarUsuarios() {
@@ -161,7 +252,15 @@ export class HorariosPage implements OnInit {
   guardarAsignacion() {
     // Validar que todos los horarios tengan ubicación
     if (!this.horariosAgregados.every(h => h.ubicacionNombre && h.ubicacionSeleccionada)) {
-      alert('Falta asignar ubicación a uno o más horarios.');
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'warning',
+        title: 'Falta asignar ubicación a uno o más horarios.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
       return;
     }
     // Enviar cada horario con su ubicación al backend, incluyendo todos los campos del modelo
@@ -217,7 +316,15 @@ export class HorariosPage implements OnInit {
     this.usuarioSeleccionado = '';
     this.usuarioSeleccionadoObj = null;
     this.paso = 1;
-    alert('Asignaciones guardadas correctamente.');
+    Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: 'success',
+      title: 'Asignaciones guardadas correctamente.',
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
   }
 
   eliminarAsignacion(index: number) {
@@ -283,7 +390,7 @@ export class HorariosPage implements OnInit {
   editarHorarioAgregado(i: number) {
     const horario = this.horariosAgregados[i];
     this.nombreTurno = horario.nombreTurno;
-    this.diasSeleccionados = [...horario.dias];
+    this.diasSeleccionados = [...horario.dias].sort((a, b) => a - b);
     this.horaInicio = horario.horaInicio;
     this.horaFin = horario.horaFin;
     this.fechaInicio = horario.fechaInicio;
@@ -293,19 +400,59 @@ export class HorariosPage implements OnInit {
     this.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
     this.toleranciaInicio = horario.toleranciaInicioAntes || 5;
     this.toleranciaFin = horario.toleranciaFinDespues || 10;
-    this.repetirTurno = horario.dias && horario.dias.length > 0;
+    this.repetirTurno = !!horario.repetirTurno && Array.isArray(horario.dias) && horario.dias.length > 1;
+    if (!this.repetirTurno) {
+      this.diasSeleccionados = Array.isArray(horario.dias) && horario.dias.length > 0 ? [horario.dias[0]] : [];
+      this.fechaFinRepeticion = '';
+    }
     this.horarioEditandoIndex = i;
     this.radioUbicacion = horario.radioUbicacion ?? 100;
   }
 
   guardarHorario() {
     if (!this.horaInicio || !this.horaFin) {
-      alert('Completa todos los campos antes de guardar el horario.');
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'warning',
+        title: 'Por favor, completa la hora de inicio y fin.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+      return;
+    }
+    // Validar fecha de fin >= fecha de inicio
+    if (this.fechaFin && this.fechaInicio && this.fechaFin < this.fechaInicio) {
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'warning',
+        title: 'No se puede seleccionar una fecha de fin anterior a la fecha de inicio.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+      this.fechaFin = '';
+      return;
+    }
+    // Validar hora de fin > hora de inicio (en el mismo día)
+    if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio) {
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'warning',
+        title: 'No se puede seleccionar una hora de fin igual o anterior a la hora de inicio.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+      this.horaFin = '';
       return;
     }
     let dias: number[] = [];
     if (this.repetirTurno) {
-      dias = [...this.diasSeleccionados];
+      dias = [...this.diasSeleccionados].sort((a, b) => a - b);
     } else if (this.fechaInicio) {
       // Calcular el día de la semana usando el algoritmo de Zeller para evitar usar Date
       const [yearStr, monthStr, dayStr] = this.fechaInicio.split('-');
@@ -321,6 +468,10 @@ export class HorariosPage implements OnInit {
       const diaSemana = (h + 6) % 7;
       dias = [diaSemana];
     }
+    if (!this.repetirTurno) {
+      this.fechaFinRepeticion = '';
+      dias = dias.length > 0 ? [dias[0]] : [];
+    }
     const horario = {
       nombreTurno: this.nombreTurno,
       dias,
@@ -331,12 +482,13 @@ export class HorariosPage implements OnInit {
       horaAlmuerzoSalida: this.horaAlmuerzoSalida,
       horaAlmuerzoRegreso: this.horaAlmuerzoRegreso,
       toleranciaInicioAntes: this.toleranciaInicio,
-      toleranciaInicioDespues: this.toleranciaInicio,
       toleranciaFinDespues: this.toleranciaFin,
       repetirTurno: this.repetirTurno,
-      fechaFinRepeticion: this.fechaFinRepeticion,
+      fechaFinRepeticion: this.repetirTurno ? this.fechaFinRepeticion : '',
       atrasoPermitido: this.atrasoPermitido,
-      radioUbicacion: this.radioUbicacion
+      radioUbicacion: this.radioUbicacion,
+      ubicacionNombre: this.ubicacionNombre,
+      ubicacionSeleccionada: this.ubicacionSeleccionada
     };
     if (this.horarioEditandoIndex !== null) {
       this.horariosAgregados[this.horarioEditandoIndex] = horario;
@@ -344,6 +496,15 @@ export class HorariosPage implements OnInit {
     } else {
       this.horariosAgregados.push(horario);
     }
+    Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: 'success',
+      title: '¡Horario guardado correctamente!',
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
     this.limpiarFormularioHorario();
   }
 
@@ -482,6 +643,32 @@ export class HorariosPage implements OnInit {
     setTimeout(() => {
       this.map.updateSize();
     }, 200);
+
+    // Centrar y dibujar marcador/círculo si ya hay ubicación seleccionada
+    if (this.ubicacionSeleccionada) {
+      const coords = fromLonLat([this.ubicacionSeleccionada.lng, this.ubicacionSeleccionada.lat]);
+      this.map.getView().setCenter(coords);
+      this.map.getView().setZoom(16);
+      this.vectorSource.clear();
+      this.marker = new Feature({
+        geometry: new Point(coords)
+      });
+      this.marker.setStyle(new Style({
+        image: new Icon({
+          src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+          scale: 0.05
+        })
+      }));
+      this.vectorSource.addFeature(this.marker);
+      this.circle = new Feature({
+        geometry: new OlCircle(coords, this.radioUbicacion || 100)
+      });
+      this.circle.setStyle(new Style({
+        stroke: new Stroke({ color: 'rgba(0,123,255,0.5)', width: 2 }),
+        fill: new Fill({ color: 'rgba(0,123,255,0.1)' })
+      }));
+      this.vectorSource.addFeature(this.circle);
+    }
   }
 
   toggleDia(dia: number) {
@@ -636,5 +823,45 @@ export class HorariosPage implements OnInit {
   }
   onFechaFinRepeticionChange() {
     // No es necesario hacer nada, el ngModel ya actualiza la vista
+  }
+
+  validarFechaFin() {
+    if (this.fechaFin && this.fechaInicio && this.fechaFin < this.fechaInicio) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No se puede seleccionar una fecha de fin anterior a la fecha de inicio.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'swal2-toast-center',
+          container: 'swal2-no-backdrop'
+        },
+        backdrop: false
+      });
+      this.fechaFin = '';
+    }
+  }
+
+  validarHoraFin() {
+    if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No se puede seleccionar una hora de fin igual o anterior a la hora de inicio.',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'swal2-toast-center',
+          container: 'swal2-no-backdrop'
+        },
+        backdrop: false
+      });
+      this.horaFin = '';
+    }
   }
 } 
