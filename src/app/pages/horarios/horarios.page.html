@@ -61,18 +61,18 @@
           </ion-row>
           <ion-item>
             <ion-label position="stacked">Fecha de fin de repetición</ion-label>
-            <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha"></ion-input>
+            <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado()"></ion-input>
           </ion-item>
         </div>
         <ion-item>
           <ion-label position="stacked">Nombre del turno (opcional)</ion-label>
-          <ion-input [(ngModel)]="nombreTurno" name="nombreTurno" placeholder="Ej: Turno mañana"></ion-input>
+          <ion-input [(ngModel)]="nombreTurno" name="nombreTurno" placeholder="Ej: Turno mañana" (ngModelChange)="onCampoEditado()"></ion-input>
         </ion-item>
         <ion-row>
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Inicio de turno</ion-label>
-              <ion-input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" placeholder="Selecciona la fecha"></ion-input>
+              <ion-input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
             <ion-item>
               <ion-label position="stacked">Hora de inicio</ion-label>
@@ -80,24 +80,19 @@
                 type="time"
                 [(ngModel)]="horaInicio"
                 name="horaInicio"
-                placeholder="Selecciona la hora">
+                placeholder="Selecciona la hora"
+                (ngModelChange)="onCampoEditado()">
               </ion-input>
             </ion-item>
           </ion-col>
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Fin de turno</ion-label>
-              <ion-input type="date" [(ngModel)]="fechaFin" name="fechaFin" placeholder="Selecciona la fecha" (ionChange)="validarFechaFin()"></ion-input>
+              <ion-input type="date" #fechaFinInput [(ngModel)]="fechaFin" name="fechaFin" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado(); onFechaFinChange()"></ion-input>
             </ion-item>
             <ion-item>
               <ion-label position="stacked">Hora de fin</ion-label>
-              <ion-input
-                type="time"
-                [(ngModel)]="horaFin"
-                name="horaFin"
-                placeholder="Selecciona la hora"
-                (ionChange)="validarHoraFin()">
-              </ion-input>
+              <ion-input type="time" #horaFinInput [(ngModel)]="horaFin" name="horaFin" placeholder="Selecciona la hora" (ngModelChange)="onCampoEditado(); onHoraFinChange()"></ion-input>
             </ion-item>
           </ion-col>
         </ion-row>
@@ -105,7 +100,7 @@
           <ion-col size="4">
             <ion-item>
               <ion-label position="stacked">Tolerancia de inicio (minutos)</ion-label>
-              <ion-input type="number" [(ngModel)]="toleranciaInicio" name="toleranciaInicio" min="0" placeholder="5"></ion-input>
+              <ion-input type="number" [(ngModel)]="toleranciaInicio" name="toleranciaInicio" min="0" placeholder="5" (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
             <ion-note color="medium" style="padding-left: 16px;">
               {{toleranciaInicio}} min antes y después de entrada
@@ -114,7 +109,7 @@
           <ion-col size="4">
             <ion-item>
               <ion-label position="stacked">Atraso permitido (minutos)</ion-label>
-              <ion-input type="number" [(ngModel)]="atrasoPermitido" name="atrasoPermitido" min="0" placeholder="10"></ion-input>
+              <ion-input type="number" [(ngModel)]="atrasoPermitido" name="atrasoPermitido" min="0" placeholder="10" (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
             <ion-note color="medium" style="padding-left: 16px;">
               Hasta {{atrasoPermitido}} min de atraso
@@ -123,7 +118,7 @@
           <ion-col size="4">
             <ion-item>
               <ion-label position="stacked">Tolerancia de fin (minutos)</ion-label>
-              <ion-input type="number" [(ngModel)]="toleranciaFin" name="toleranciaFin" min="0" placeholder="10"></ion-input>
+              <ion-input type="number" [(ngModel)]="toleranciaFin" name="toleranciaFin" min="0" placeholder="10" (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
             <ion-note color="medium" style="padding-left: 16px;">
               {{toleranciaFin}} min después de salida
@@ -135,12 +130,21 @@
             <ion-button color="medium" (click)="anteriorPaso()">Anterior</ion-button>
           </ion-col>
           <ion-col size="auto">
-            <ion-button color="success" (click)="guardarHorario()" [disabled]="!horaInicio || !horaFin || (repetirTurno && diasSeleccionados.length === 0)">Guardar horario</ion-button>
+            <ion-button color="danger" (click)="cancelarFlujo()">Cancelar</ion-button>
+          </ion-col>
+          <ion-col size="auto">
+            <ion-button 
+              [color]="cambiosSinGuardar ? 'warning' : 'success'" 
+              (click)="guardarHorario()" 
+              [disabled]="!horaInicio || !horaFin || (repetirTurno && diasSeleccionados.length === 0)">
+              Guardar horario
+            </ion-button>
           </ion-col>
           <ion-col size="auto">
             <ion-button color="primary" (click)="siguientePaso()" [disabled]="horariosAgregados.length === 0">Siguiente</ion-button>
           </ion-col>
         </ion-row>
+        <div *ngIf="cambiosSinGuardar" style="color: #d35400; font-weight: bold; margin-top: 8px;">Tienes cambios sin guardar</div>
         <ion-list *ngIf="horariosAgregados.length > 0">
           <ion-card *ngFor="let horario of horariosAgregados; let i = index" class="jornada-card">
             <ion-card-content>
@@ -182,6 +186,23 @@
             </span>
           </ion-label>
         </ion-item>
+        <!-- Mostrar ubicación actual y botón de editar solo si se está editando un horario real -->
+        <div *ngIf="horariosAgregados.length > 0 && horariosAgregados[0].id">
+          <ion-card color="light" style="margin-bottom: 16px;">
+            <ion-card-content>
+              <div *ngIf="horariosAgregados[0].ubicacionNombre">
+                <strong>Ubicación actual:</strong> {{ horariosAgregados[0].ubicacionNombre }}<br>
+                <span *ngIf="horariosAgregados[0].ubicacionSeleccionada">
+                  Lat: {{ horariosAgregados[0].ubicacionSeleccionada.lat }}, Lng: {{ horariosAgregados[0].ubicacionSeleccionada.lng }}
+                </span>
+              </div>
+              <ion-button color="primary" (click)="abrirSelectorUbicacion(0)">
+                Editar ubicación
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </div>
+        <!-- Si no está editando un horario real, mostrar el flujo normal -->
         <ion-item lines="none">
           <ion-checkbox slot="start" [(ngModel)]="mismaUbicacionParaTodos" (ionChange)="onMismaUbicacionChange()"></ion-checkbox>
           <ion-label>Usar la misma ubicación para todos los horarios</ion-label>
@@ -199,21 +220,13 @@
                 Tolerancia: {{ horario.toleranciaAtraso }} min
               </p>
             </ion-label>
-            <ion-button fill="clear" color="primary" (click)="abrirSelectorUbicacion(i)">
+            <ion-button fill="clear" color="primary" (click)="abrirSelectorUbicacion(i)" *ngIf="!horario.id">
               <ion-icon name="location-outline"></ion-icon>
               Seleccionar ubicación
             </ion-button>
             <span *ngIf="horario.ubicacionNombre">{{ horario.ubicacionNombre }}</span>
           </ion-item>
         </ion-list>
-        <ion-row class="ion-justify-content-between ion-margin-top">
-          <ion-col size="auto">
-            <ion-button color="medium" (click)="anteriorPaso()">Anterior</ion-button>
-          </ion-col>
-          <ion-col size="auto">
-            <ion-button color="success" (click)="guardarAsignacion()" [disabled]="!todasUbicacionesAsignadas()">Guardar</ion-button>
-          </ion-col>
-        </ion-row>
         <!-- Modal o sección de mapa para seleccionar ubicación -->
         <div *ngIf="mostrarMapaUbicacion" class="ubicacion-modal">
           <ion-row>
@@ -244,6 +257,17 @@
             </ion-col>
           </ion-row>
         </div>
+        <ion-row class="ion-justify-content-between ion-margin-top">
+          <ion-col size="auto">
+            <ion-button color="medium" (click)="anteriorPaso()">Anterior</ion-button>
+          </ion-col>
+          <ion-col size="auto">
+            <ion-button color="danger" (click)="cancelarFlujo()">Cancelar</ion-button>
+          </ion-col>
+          <ion-col size="auto">
+            <ion-button color="success" (click)="guardarAsignacion()" [disabled]="!todasUbicacionesAsignadas()">Guardar</ion-button>
+          </ion-col>
+        </ion-row>
       </div>
     </ion-card-content>
   </ion-card>

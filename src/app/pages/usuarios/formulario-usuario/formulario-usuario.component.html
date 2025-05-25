@@ -25,7 +25,7 @@
                   <ion-col size="12" size-md="6">
                     <ion-item>
                       <ion-label position="stacked">Nombre*</ion-label>
-                      <ion-input formControlName="name" (ionInput)="userForm.get('name')?.markAsTouched()"></ion-input>
+                      <ion-input formControlName="name" (ionInput)="filtrarSoloLetras($event); userForm.get('name')?.markAsTouched()" (ionBlur)="onBlur_name()"></ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('name')?.invalid && (userForm.get('name')?.dirty || userForm.get('name')?.touched) && userForm.get('name')?.hasError('required')">
                         El nombre es obligatorio
                       </ion-note>
@@ -39,7 +39,7 @@
                   </ion-col><ion-col size="12" size-md="5">
                     <ion-item>
                       <ion-label position="stacked">Apellido*</ion-label>
-                      <ion-input formControlName="lastname" (ionInput)="userForm.get('lastname')?.markAsTouched()"></ion-input>
+                      <ion-input formControlName="lastname" (ionInput)="filtrarSoloLetras($event); userForm.get('lastname')?.markAsTouched()" (ionBlur)="onBlur_lastname()"></ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('lastname')?.invalid && (userForm.get('lastname')?.dirty || userForm.get('lastname')?.touched) && userForm.get('lastname')?.hasError('required')">
                         El apellido es obligatorio
                       </ion-note>
@@ -54,7 +54,7 @@
                   <ion-col size="12" size-md="6">
                     <ion-item>
                       <ion-label position="stacked">Identificación*</ion-label>
-                      <ion-input formControlName="identification" (ionInput)="userForm.get('identification')?.markAsTouched()"></ion-input>
+                      <ion-input formControlName="identification" (ionInput)="filtrarSoloNumeros($event, 10); userForm.get('identification')?.markAsTouched()" (ionBlur)="onBlur_identification()"></ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('identification')?.invalid && (userForm.get('identification')?.dirty || userForm.get('identification')?.touched) && userForm.get('identification')?.hasError('required')">
                         La identificación es obligatoria
                       </ion-note>
@@ -100,7 +100,7 @@
                   <ion-col size="12" size-md="5">
                     <ion-item>
                       <ion-label position="stacked">Celular*</ion-label>
-                      <ion-input formControlName="cellPhone" type="tel" (ionInput)="userForm.get('cellPhone')?.markAsTouched()"></ion-input>
+                      <ion-input formControlName="cellPhone" type="tel" (ionInput)="filtrarSoloNumeros($event, 10); userForm.get('cellPhone')?.markAsTouched()" (ionBlur)="onBlur_cellPhone()"></ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('cellPhone')?.invalid && (userForm.get('cellPhone')?.dirty || userForm.get('cellPhone')?.touched) && userForm.get('cellPhone')?.hasError('required')">
                         El número de celular es obligatorio
                       </ion-note>
@@ -119,7 +119,8 @@
                         type="date" 
                         formControlName="birthdate" 
                         (ionInput)="userForm.get('birthdate')?.markAsTouched()"
-                        [value]="form.value.birthdate | date:'yyyy-MM-dd'">
+                        [value]="form.value.birthdate | date:'yyyy-MM-dd'"
+                        (ionBlur)="onBlur_birthdate()">
                       </ion-input>
                       <ion-note slot="error" *ngIf="userForm.get('birthdate')?.invalid && (userForm.get('birthdate')?.dirty || userForm.get('birthdate')?.touched) && userForm.get('birthdate')?.hasError('required')">
                         La fecha de nacimiento es obligatoria
@@ -140,11 +141,16 @@
               <ion-card-content>
                 <ion-item>
                   <ion-label position="stacked">Usuario*</ion-label>
-                  <ion-input formControlName="username" (ionInput)="userForm.get('username')?.markAsTouched()"></ion-input>
+                  <ion-input formControlName="username" (ionInput)="userForm.get('username')?.markAsTouched()" (ionBlur)="onBlur_username()"></ion-input>
+                </ion-item>
+                <ion-item *ngIf="!editMode">
+                  <ion-button expand="block" color="secondary" (click)="sugerirUsuarioYContrasena()">
+                    Sugerir usuario y contraseña
+                  </ion-button>
                 </ion-item>
                 <ion-item>
                   <ion-label position="stacked">Correo electrónico*</ion-label>
-                  <ion-input formControlName="email" autocomplete="new-password" (ionInput)="userForm.get('email')?.markAsTouched()"></ion-input>
+                  <ion-input formControlName="email" autocomplete="new-password" (ionInput)="userForm.get('email')?.markAsTouched()" (ionBlur)="onBlur_email()"></ion-input>
                   <ion-note slot="error" *ngIf="userForm.get('email')?.invalid && (userForm.get('email')?.dirty || userForm.get('email')?.touched) && userForm.get('email')?.hasError('required')">
                     El correo es obligatorio
                   </ion-note>
@@ -154,7 +160,7 @@
                 </ion-item>
                 <ion-item>
                   <ion-label position="stacked">Contraseña*</ion-label>
-                  <ion-input type="password" formControlName="password" autocomplete="new-password" (ionInput)="userForm.get('password')?.markAsTouched()"></ion-input>
+                  <ion-input type="password" formControlName="password" autocomplete="new-password" (ionInput)="userForm.get('password')?.markAsTouched()" (ionBlur)="onBlur_password()"></ion-input>
                   <ion-note slot="error" *ngIf="userForm.get('password')?.invalid && (userForm.get('password')?.dirty || userForm.get('password')?.touched) && userForm.get('password')?.hasError('required')">
                     La contraseña es obligatoria
                   </ion-note>

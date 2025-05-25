@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { IonicModule, ModalController, AlertController, ToastController } from '@ionic/angular';
 import { Usuario, Role, UsuariosService } from 'src/app/services/usuarios.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-formulario-usuario',
@@ -80,7 +81,7 @@ export class FormularioUsuarioComponent implements OnInit {
       name: [initialValues.name, [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/), Validators.minLength(2)]],
       lastname: [initialValues.lastname, [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/), Validators.minLength(2)]],
       email: [initialValues.email, [Validators.required, Validators.email]],
-      identification: [initialValues.identification, [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(8)]],
+      identification: [initialValues.identification, [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
       identificationType: [
         initialValues.identificationType && typeof initialValues.identificationType === 'object' && 'id' in initialValues.identificationType
           ? (initialValues.identificationType as { id: string }).id
@@ -94,13 +95,18 @@ export class FormularioUsuarioComponent implements OnInit {
         this.editMode ? [] : [Validators.required]
       ],
       birthdate: [initialValues.birthdate || null, [Validators.required]],
-      cellPhone: [initialValues.cellPhone || '', [Validators.required, Validators.pattern(/^[0-9]{9,15}$/)]],
+      cellPhone: [initialValues.cellPhone || '', [Validators.required, Validators.pattern(/^[0-9]{9,10}$/)]],
       password: [
         initialValues.password,
         this.editMode ? [] : [Validators.required, Validators.minLength(6)]
       ],
       passwordChanged: [initialValues.passwordChanged ?? true]
     });
+
+    // Validación en blur con SweetAlert2
+    if (!this.editMode) {
+      this.setupBlurValidation();
+    }
 
     // Si es edición, aseguramos que los selects tengan el id correcto
     if (this.editMode && this.usuario) {
@@ -109,6 +115,93 @@ export class FormularioUsuarioComponent implements OnInit {
         identificationType: typeof this.usuario.identificationType === 'object' && this.usuario.identificationType !== null ? (this.usuario.identificationType as { id: string }).id : this.usuario.identificationType ?? null
       });
     }
+  }
+
+  setupBlurValidation() {
+    const fields = [
+      { key: 'name', label: 'Nombre', errors: {
+        required: 'El nombre es obligatorio',
+        pattern: 'Solo se permiten letras',
+        minlength: 'Mínimo 2 caracteres'
+      } },
+      { key: 'lastname', label: 'Apellido', errors: {
+        required: 'El apellido es obligatorio',
+        pattern: 'Solo se permiten letras',
+        minlength: 'Mínimo 2 caracteres'
+      } },
+      { key: 'identification', label: 'Identificación', errors: {
+        required: 'La identificación es obligatoria',
+        pattern: 'La identificación debe tener exactamente 10 números'
+      } },
+      { key: 'cellPhone', label: 'Celular', errors: {
+        required: 'El número de celular es obligatorio',
+        pattern: 'El número de celular debe tener entre 9 y 15 dígitos'
+      } },
+      { key: 'birthdate', label: 'Fecha de nacimiento', errors: {
+        required: 'La fecha de nacimiento es obligatoria'
+      } },
+      { key: 'username', label: 'Usuario', errors: {
+        required: 'El usuario es obligatorio'
+      } },
+      { key: 'email', label: 'Correo electrónico', errors: {
+        required: 'El correo es obligatorio',
+        email: 'Formato de correo inválido'
+      } },
+      { key: 'password', label: 'Contraseña', errors: {
+        required: 'La contraseña es obligatoria',
+        minlength: 'Mínimo 6 caracteres'
+      } },
+    ];
+    fields.forEach(field => {
+      (this as any)[`onBlur_${field.key}`] = () => {
+        const control = this.form.get(field.key);
+        if (control && control.invalid) {
+          const errorKey = Object.keys(control.errors || {})[0];
+          if (errorKey && Object.prototype.hasOwnProperty.call(field.errors, errorKey)) {
+            Swal.close();
+            Swal.fire({
+              toast: true,
+              position: 'top',
+              icon: 'warning',
+              title: (field.errors as any)[errorKey],
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true
+            });
+          }
+        }
+      };
+    });
+  }
+
+  sugerirUsuarioYContrasena() {
+    const nombre = this.form.get('name')?.value || '';
+    const apellido = this.form.get('lastname')?.value || '';
+    const identificacion = this.form.get('identification')?.value || '';
+    let usuario = '';
+    if (nombre && apellido && identificacion.length >= 3) {
+      usuario = nombre.trim().charAt(0).toLowerCase() + apellido.trim().toLowerCase() + identificacion.slice(-3);
+    }
+    const contrasena = this.generarContrasenaAleatoria();
+    this.form.patchValue({ username: usuario, password: contrasena });
+    Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: 'info',
+      title: `Sugerido: Usuario: ${usuario}, Contraseña: ${contrasena}`,
+      showConfirmButton: false,
+      timer: 3500,
+      timerProgressBar: true
+    });
+  }
+
+  generarContrasenaAleatoria(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let pass = '';
+    for (let i = 0; i < 10; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
   }
 
   cancel() {
@@ -156,5 +249,35 @@ export class FormularioUsuarioComponent implements OnInit {
 
   getNombreCatalogo(valor: any): string | null {
     return valor && typeof valor === 'object' && 'name' in valor ? valor.name : null;
+  }
+
+  // Métodos de blur para cada campo (declarados para evitar error de linter)
+  onBlur_name() {}
+  onBlur_lastname() {}
+  onBlur_identification() {}
+  onBlur_cellPhone() {}
+  onBlur_birthdate() {}
+  onBlur_username() {}
+  onBlur_email() {}
+  onBlur_password() {}
+
+  // Métodos para filtrar caracteres permitidos en inputs
+  filtrarSoloNumeros(event: any, maxLength: number) {
+    let valor = event.target.value.replace(/[^0-9]/g, '');
+    if (valor.length > maxLength) valor = valor.slice(0, maxLength);
+    event.target.value = valor;
+    const controlName = event.target.getAttribute('formcontrolname');
+    if (controlName && this.form.get(controlName)) {
+      this.form.get(controlName)?.setValue(valor, { emitEvent: false });
+    }
+  }
+
+  filtrarSoloLetras(event: any) {
+    let valor = event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '');
+    event.target.value = valor;
+    const controlName = event.target.getAttribute('formcontrolname');
+    if (controlName && this.form.get(controlName)) {
+      this.form.get(controlName)?.setValue(valor, { emitEvent: false });
+    }
   }
 }

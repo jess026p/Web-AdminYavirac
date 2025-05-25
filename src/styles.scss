@@ -8,4 +8,15 @@
 .swal2-no-backdrop {
   background: transparent !important;
   box-shadow: none !important;
+}
+
+/* Forzar el z-index del popup de SweetAlert2 para que siempre esté por encima de todo */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.input-error {
+  border: 2px solid #e74c3c !important;
+  box-shadow: 0 0 4px #e74c3c;
+  transition: border 0.2s, box-shadow 0.2s;
 } 
