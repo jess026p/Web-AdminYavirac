@@ -46,24 +46,6 @@
             </span>
           </ion-label>
         </ion-item>
-        <ion-item lines="none">
-          <ion-checkbox slot="start" [(ngModel)]="repetirTurno"></ion-checkbox>
-          <ion-label>Repetir turno</ion-label>
-        </ion-item>
-        <div *ngIf="repetirTurno">
-          <ion-label class="ion-margin-bottom">Repetir en estos días</ion-label>
-          <ion-row>
-            <ion-col size="auto" *ngFor="let dia of diasSemana">
-              <ion-chip [color]="diasSeleccionados.includes(dia.value) ? 'primary' : 'medium'" (click)="toggleDia(dia.value)">
-                <ion-label>{{ dia.label }}</ion-label>
-              </ion-chip>
-            </ion-col>
-          </ion-row>
-          <ion-item>
-            <ion-label position="stacked">Fecha de fin de repetición</ion-label>
-            <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado()"></ion-input>
-          </ion-item>
-        </div>
         <ion-item>
           <ion-label position="stacked">Nombre del turno (opcional)</ion-label>
           <ion-input [(ngModel)]="nombreTurno" name="nombreTurno" placeholder="Ej: Turno mañana" (ngModelChange)="onCampoEditado()"></ion-input>
@@ -72,8 +54,26 @@
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Inicio de turno</ion-label>
-              <ion-input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado()"></ion-input>
+              <ion-input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" placeholder="Selecciona la fecha" required (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
+          </ion-col>
+          <ion-col size="6">
+            <ion-item>
+              <ion-label position="stacked">Fin de repetición</ion-label>
+              <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha" required (ngModelChange)="onCampoEditado()"></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-label class="ion-margin-bottom">Selecciona los días en que se repite el turno</ion-label>
+        <ion-row>
+          <ion-col size="auto" *ngFor="let dia of diasSemana">
+            <ion-chip [color]="diasSeleccionados.includes(dia.value) ? 'primary' : 'medium'" (click)="toggleDia(dia.value)">
+              <ion-label>{{ dia.label }}</ion-label>
+            </ion-chip>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Hora de inicio</ion-label>
               <ion-input
@@ -87,17 +87,13 @@
           </ion-col>
           <ion-col size="6">
             <ion-item>
-              <ion-label position="stacked">Fin de turno</ion-label>
-              <ion-input type="date" #fechaFinInput [(ngModel)]="fechaFin" name="fechaFin" placeholder="Selecciona la fecha" (ngModelChange)="onCampoEditado(); onFechaFinChange()"></ion-input>
-            </ion-item>
-            <ion-item>
               <ion-label position="stacked">Hora de fin</ion-label>
               <ion-input type="time" #horaFinInput [(ngModel)]="horaFin" name="horaFin" placeholder="Selecciona la hora" (ngModelChange)="onCampoEditado(); onHoraFinChange()"></ion-input>
             </ion-item>
           </ion-col>
         </ion-row>
         <ion-row>
-          <ion-col size="4">
+          <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Tolerancia de inicio (minutos)</ion-label>
               <ion-input type="number" [(ngModel)]="toleranciaInicio" name="toleranciaInicio" min="0" placeholder="5" (ngModelChange)="onCampoEditado()"></ion-input>
@@ -106,22 +102,13 @@
               {{toleranciaInicio}} min antes y después de entrada
             </ion-note>
           </ion-col>
-          <ion-col size="4">
+          <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Atraso permitido (minutos)</ion-label>
               <ion-input type="number" [(ngModel)]="atrasoPermitido" name="atrasoPermitido" min="0" placeholder="10" (ngModelChange)="onCampoEditado()"></ion-input>
             </ion-item>
             <ion-note color="medium" style="padding-left: 16px;">
               Hasta {{atrasoPermitido}} min de atraso
-            </ion-note>
-          </ion-col>
-          <ion-col size="4">
-            <ion-item>
-              <ion-label position="stacked">Tolerancia de fin (minutos)</ion-label>
-              <ion-input type="number" [(ngModel)]="toleranciaFin" name="toleranciaFin" min="0" placeholder="10" (ngModelChange)="onCampoEditado()"></ion-input>
-            </ion-item>
-            <ion-note color="medium" style="padding-left: 16px;">
-              {{toleranciaFin}} min después de salida
             </ion-note>
           </ion-col>
         </ion-row>

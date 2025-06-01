@@ -182,7 +182,7 @@ export class FormularioUsuarioComponent implements OnInit {
     if (nombre && apellido && identificacion.length >= 3) {
       usuario = nombre.trim().charAt(0).toLowerCase() + apellido.trim().toLowerCase() + identificacion.slice(-3);
     }
-    const contrasena = this.generarContrasenaAleatoria();
+    const contrasena = identificacion; // Ahora la contraseña es la cédula
     this.form.patchValue({ username: usuario, password: contrasena });
     Swal.fire({
       toast: true,
@@ -193,15 +193,6 @@ export class FormularioUsuarioComponent implements OnInit {
       timer: 3500,
       timerProgressBar: true
     });
-  }
-
-  generarContrasenaAleatoria(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let pass = '';
-    for (let i = 0; i < 10; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return pass;
   }
 
   cancel() {

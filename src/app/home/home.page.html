@@ -48,8 +48,10 @@
 
         <div class="tarjetas-usuarios-grid">
           <ion-card *ngFor="let usuario of usuariosFiltrados" class="tarjeta-usuario">
-            <ion-avatar class="avatar-usuario">
-              <img [src]="usuario.foto || 'assets/avatar-default.png'" alt="Foto de {{ usuario.nombre || usuario.name }}">
+            <ion-avatar class="avatar-usuario" style="background:#1976d2; display:flex; align-items:center; justify-content:center;">
+              <span style="color:white; font-size:1.5em; font-weight:bold;">
+                {{ (usuario.nombre || usuario.name)?.charAt(0) }}{{ (usuario.apellido || usuario.lastname)?.charAt(0) }}
+              </span>
             </ion-avatar>
             <ion-card-header>
               <ion-card-title class="nombre-usuario-tarjeta">{{ usuario.nombre || usuario.name }} {{ usuario.apellido || usuario.lastname }}</ion-card-title>
@@ -71,18 +73,7 @@
         </div>
 
         <!-- Filtros de mes y año -->
-        <div class="filtros-mes-anio" style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-          <ion-label>Mes:</ion-label>
-          <ion-select [(ngModel)]="mesSeleccionado" (ionChange)="onFiltroMesAnioChange()">
-            <ion-select-option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
-              {{ ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m-1] }}
-            </ion-select-option>
-          </ion-select>
-          <ion-label>Año:</ion-label>
-          <ion-select [(ngModel)]="anioSeleccionado" (ionChange)="onFiltroMesAnioChange()">
-            <ion-select-option *ngFor="let y of [2023,2024,2025,2026]" [value]="y">{{ y }}</ion-select-option>
-          </ion-select>
-        </div>
+        <!-- (Eliminado: ahora los filtros están dentro del modal) -->
 
         <!-- Modal de asistencia -->
         <ion-modal *ngIf="mostrarModalAsistencia" [isOpen]="mostrarModalAsistencia" (didDismiss)="cerrarModalAsistencia()">
@@ -95,7 +86,7 @@
                 </ion-buttons>
               </ion-toolbar>
             </ion-header>
-            <ion-content class="ion-padding fondo-modal-asistencia">
+            <div class="ion-padding fondo-modal-asistencia" style="max-height:80vh; overflow-y:auto; margin-bottom: 24px;">
               <div class="modal-asistencia-header">
                 <h2 class="nombre-usuario-modal">
                   {{ usuarioSeleccionado?.nombre || usuarioSeleccionado?.name }} {{ usuarioSeleccionado?.apellido || usuarioSeleccionado?.lastname }}
@@ -103,11 +94,37 @@
                 <div class="fecha-actual-modal">
                   <strong>Fecha actual:</strong> {{ fechaActual }}
                 </div>
+                <div class="horario-hoy-modal" style="margin-top:8px;">
+                  <ng-container *ngIf="resumenAsistencia?.registro_hoy && resumenAsistencia.registro_hoy.length > 0; else sinHorarioHoy">
+                    <ion-badge color="primary" style="font-size:15px;">
+                      Horario asignado hoy:
+                      <ng-container *ngFor="let registro of resumenAsistencia.registro_hoy; let last = last">
+                        <span *ngIf="registro.horario !== '-'">{{ registro.horario }}<span *ngIf="!last">, </span></span>
+                      </ng-container>
+                    </ion-badge>
+                  </ng-container>
+                  <ng-template #sinHorarioHoy>
+                    <ion-badge color="warning" style="font-size:15px;">No hay horario asignado para hoy</ion-badge>
+                  </ng-template>
+                </div>
+              </div>
+              <!-- Filtros de mes y año dentro del modal -->
+              <div class="filtros-mes-anio" style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+                <ion-label>Mes:</ion-label>
+                <ion-select [(ngModel)]="mesSeleccionado" (ionChange)="onFiltroMesAnioModalChange()">
+                  <ion-select-option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
+                    {{ ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m-1] }}
+                  </ion-select-option>
+                </ion-select>
+                <ion-label>Año:</ion-label>
+                <ion-select [(ngModel)]="anioSeleccionado" (ionChange)="onFiltroMesAnioModalChange()">
+                  <ion-select-option *ngFor="let y of [2023,2024,2025,2026]" [value]="y">{{ y }}</ion-select-option>
+                </ion-select>
               </div>
               <div class="cuadros-resumen-modal">
                 <div class="cuadro-azul">
                   <ion-icon name="calendar-number-outline" class="icono-cuadro"></ion-icon>
-                  Días laborados en {{ mesActual }}: <strong>{{ resumenAsistencia.dias_laborados }}</strong>
+                  Días laborados en {{ ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][mesResumen-1] }}: <strong>{{ resumenAsistencia.dias_laborados }}</strong>
                 </div>
                 <div class="cuadro-verde">
                   <ion-icon name="close-circle-outline" class="icono-cuadro"></ion-icon>
@@ -121,96 +138,94 @@
               <div class="panel-marcacion-modal">
                 <ion-grid class="ion-margin-top">
                   <ion-row class="ion-text-center">
-                    <ion-col><strong></strong></ion-col>
-                    <ion-col><strong>Estado</strong></ion-col>
-                    <ion-col><strong>Hora</strong></ion-col>
-                    <ion-col><strong>Motivo</strong></ion-col>
-                    <ion-col><strong>Mapa</strong></ion-col>
+                    <ion-col><strong>Horario</strong></ion-col>
+                    <ion-col><strong>Estado Entrada</strong></ion-col>
+                    <ion-col><strong>Hora Entrada</strong></ion-col>
+                    <ion-col><strong>Motivo Entrada</strong></ion-col>
+                    <ion-col><strong>Estado Salida</strong></ion-col>
+                    <ion-col><strong>Hora Salida</strong></ion-col>
+                    <ion-col><strong>Motivo Salida</strong></ion-col>
+                    <ion-col><strong>Mapa Entrada</strong></ion-col>
+                    <ion-col><strong>Mapa Salida</strong></ion-col>
                   </ion-row>
+                  <ng-container *ngFor="let registro of resumenAsistencia.registro_hoy">
                   <ion-row class="ion-text-center">
-                    <ion-col><strong>Entrada</strong></ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.estado_entrada || '-' }}</ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.hora_entrada || '-' }}</ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.motivo_entrada || '-' }}</ion-col>
+                      <ion-col>
+                        <span *ngIf="registro.horario !== '-'">{{ registro.horario }}</span>
+                        <span *ngIf="registro.horario === '-'">Sin horario asignado</span>
+                      </ion-col>
+                      <ion-col [ngClass]="{'falta-injustificada': registro.estado_entrada === 'Sin marcación' && registro.motivo_entrada === 'Falta injustificada'}">{{ registro.estado_entrada || '-' }}</ion-col>
+                      <ion-col>{{ registro.hora_entrada || '-' }}</ion-col>
+                      <ion-col>{{ registro.motivo_entrada || '-' }}</ion-col>
+                      <ion-col [ngClass]="{'falta-injustificada': registro.estado_salida === 'Sin marcación' && registro.motivo_salida === 'Falta injustificada'}">{{ registro.estado_salida || '-' }}</ion-col>
+                      <ion-col>{{ registro.hora_salida || '-' }}</ion-col>
+                      <ion-col>{{ registro.motivo_salida || '-' }}</ion-col>
                     <ion-col>
-                      <ion-button fill="clear" size="small" *ngIf="resumenAsistencia.registro_hoy?.lat_entrada && resumenAsistencia.registro_hoy?.lng_entrada" (click)="abrirMapa({lat: resumenAsistencia.registro_hoy.lat_entrada, lng: resumenAsistencia.registro_hoy.lng_entrada})">
+                        <ion-button fill="clear" size="small" *ngIf="registro.lat_entrada && registro.lng_entrada" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})">
                         <ion-icon name="location-outline" size="large"></ion-icon>
                       </ion-button>
-                      <ion-icon *ngIf="!(resumenAsistencia.registro_hoy?.lat_entrada && resumenAsistencia.registro_hoy?.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
+                        <ion-icon *ngIf="!(registro.lat_entrada && registro.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
                     </ion-col>
-                  </ion-row>
-                  <ion-row class="ion-text-center">
-                    <ion-col><strong>Salida</strong></ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.estado_salida || '-' }}</ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.hora_salida || '-' }}</ion-col>
-                    <ion-col>{{ resumenAsistencia.registro_hoy?.motivo_salida || '-' }}</ion-col>
                     <ion-col>
-                      <ion-button fill="clear" size="small" *ngIf="resumenAsistencia.registro_hoy?.lat_salida && resumenAsistencia.registro_hoy?.lng_salida" (click)="abrirMapa({lat: resumenAsistencia.registro_hoy.lat_salida, lng: resumenAsistencia.registro_hoy.lng_salida})">
+                        <ion-button fill="clear" size="small" *ngIf="registro.lat_salida && registro.lng_salida" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})">
                         <ion-icon name="location-outline" size="large"></ion-icon>
                       </ion-button>
-                      <ion-icon *ngIf="!(resumenAsistencia.registro_hoy?.lat_salida && resumenAsistencia.registro_hoy?.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
+                        <ion-icon *ngIf="!(registro.lat_salida && registro.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
               </ion-col>
             </ion-row>
+                  </ng-container>
           </ion-grid>
               </div>
               <ion-button expand="block" color="medium" (click)="verHistorial()">
                 {{ mostrarHistorial ? 'OCULTAR HISTORIAL' : 'VER HISTORIAL DE REGISTRO' }}
               </ion-button>
-              <div *ngIf="mostrarHistorial" class="contenedor-historial-home ion-margin-top">
-                <ion-list>
-                  <ion-item *ngFor="let registro of historialRegistros">
-                    <ion-label>
-                      <strong>{{ registro.fecha }}<span *ngIf="registro.hora_asignada"> - {{ registro.hora_asignada }}</span></strong><br>
-                      <ion-grid>
-            <ion-row class="ion-text-center">
-                          <ion-col><strong>Horario</strong></ion-col>
-              <ion-col><strong>Estado</strong></ion-col>
-                          <ion-col><strong>Hora</strong></ion-col>
-                          <ion-col><strong>Motivo</strong></ion-col>
-              <ion-col><strong>Mapa</strong></ion-col>
-            </ion-row>
-            <ion-row class="ion-text-center">
-                          <ion-col><strong>Entrada</strong></ion-col>
-                          <ion-col>{{ registro.horario_asignado || '-' }}</ion-col>
-                          <ion-col [ngClass]="{'falta-injustificada': registro.estado_entrada === 'Sin marcación'}">{{ registro.estado_entrada || '-' }}</ion-col>
-                          <ion-col>{{ registro.hora_entrada || '-' }}</ion-col>
-                          <ion-col>{{ registro.motivo_entrada || '-' }}</ion-col>
-              <ion-col>
-                            <ng-container *ngIf="registro.lat_entrada && registro.lng_entrada">
-                              <ion-button fill="clear" size="small" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})">
-                                <ion-icon name="location-outline" size="large"></ion-icon>
-                              </ion-button>
-                              <span class="direccion-marcacion" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})" style="cursor:pointer; color:#1976d2; font-size:12px; margin-left:4px;" title="Ver en el mapa">
-                                {{ registro.direccion_entrada || 'Cargando...' }}
-                              </span>
-                            </ng-container>
-                            <ion-icon *ngIf="!(registro.lat_entrada && registro.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
-              </ion-col>
-                        </ion-row>
-                        <ion-row class="ion-text-center">
-                          <ion-col><strong>Salida</strong></ion-col>
-                          <ion-col>{{ registro.horario_asignado || '-' }}</ion-col>
-                          <ion-col [ngClass]="{'falta-injustificada': registro.estado_salida === 'Sin marcación'}">{{ registro.estado_salida || '-' }}</ion-col>
-                          <ion-col>{{ registro.hora_salida || '-' }}</ion-col>
-                          <ion-col>{{ registro.motivo_salida || '-' }}</ion-col>
-              <ion-col>
-                            <ng-container *ngIf="registro.lat_salida && registro.lng_salida">
-                              <ion-button fill="clear" size="small" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})">
-                <ion-icon name="location-outline" size="large"></ion-icon>
-                              </ion-button>
-                              <span class="direccion-marcacion" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})" style="cursor:pointer; color:#1976d2; font-size:12px; margin-left:4px;" title="Ver en el mapa">
-                                {{ registro.direccion_salida || 'Cargando...' }}
-                              </span>
-                            </ng-container>
-                            <ion-icon *ngIf="!(registro.lat_salida && registro.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-                    </ion-label>
-                  </ion-item>
-                </ion-list>
+              <div *ngIf="mostrarHistorial" class="contenedor-historial-home ion-margin-top" style="max-height:350px;overflow-y:auto;">
+                <ng-container *ngIf="historialRegistros && historialRegistros.length > 0; else sinHorarios">
+                  <ion-list>
+                    <ion-item *ngFor="let registro of historialRegistros">
+                      <ion-label>
+                        <strong>{{ registro.fecha }} - {{ registro.horario }}</strong><br>
+                        <ion-grid>
+                          <ion-row class="ion-text-center">
+                            <ion-col><strong>Estado Entrada</strong></ion-col>
+                            <ion-col><strong>Hora Entrada</strong></ion-col>
+                            <ion-col><strong>Motivo Entrada</strong></ion-col>
+                            <ion-col><strong>Estado Salida</strong></ion-col>
+                            <ion-col><strong>Hora Salida</strong></ion-col>
+                            <ion-col><strong>Motivo Salida</strong></ion-col>
+                            <ion-col><strong>Mapa Entrada</strong></ion-col>
+                            <ion-col><strong>Mapa Salida</strong></ion-col>
+                          </ion-row>
+                          <ion-row class="ion-text-center">
+                            <ion-col [ngClass]="{'falta-injustificada': registro.estado_entrada === 'Sin marcación' && registro.motivo_entrada === 'Falta injustificada'}">{{ registro.estado_entrada || '-' }}</ion-col>
+                            <ion-col>{{ registro.hora_entrada || '-' }}</ion-col>
+                            <ion-col>{{ registro.motivo_entrada || '-' }}</ion-col>
+                            <ion-col [ngClass]="{'falta-injustificada': registro.estado_salida === 'Sin marcación' && registro.motivo_salida === 'Falta injustificada'}">{{ registro.estado_salida || '-' }}</ion-col>
+                            <ion-col>{{ registro.hora_salida || '-' }}</ion-col>
+                            <ion-col>{{ registro.motivo_salida || '-' }}</ion-col>
+                            <ion-col>
+                              <ion-button fill="clear" size="small" *ngIf="registro.lat_entrada && registro.lng_entrada" (click)="abrirMapa({lat: registro.lat_entrada, lng: registro.lng_entrada})">
+                                  <ion-icon name="location-outline" size="large"></ion-icon>
+                                </ion-button>
+                              <ion-icon *ngIf="!(registro.lat_entrada && registro.lng_entrada)" name="location-outline" size="large" color="medium"></ion-icon>
+                            </ion-col>
+                            <ion-col>
+                              <ion-button fill="clear" size="small" *ngIf="registro.lat_salida && registro.lng_salida" (click)="abrirMapa({lat: registro.lat_salida, lng: registro.lng_salida})">
+                                  <ion-icon name="location-outline" size="large"></ion-icon>
+                                </ion-button>
+                              <ion-icon *ngIf="!(registro.lat_salida && registro.lng_salida)" name="location-outline" size="large" color="medium"></ion-icon>
+                            </ion-col>
+                          </ion-row>
+                        </ion-grid>
+                      </ion-label>
+                    </ion-item>
+                  </ion-list>
+                </ng-container>
+                <ng-template #sinHorarios>
+                  <div class="ion-text-center ion-padding mensaje-vacio" style="color:#d32f2f; font-weight:bold;">No tiene asignaciones de horario para este mes.</div>
+                </ng-template>
               </div>
-            </ion-content>
+            </div>
           </ng-template>
         </ion-modal>
 
@@ -235,6 +250,7 @@
                     Ubicación: {{ horario.ubicacionNombre || '-' }}
                   </ion-label>
                   <ion-button color="primary" (click)="editarHorario(horario)">Editar horario</ion-button>
+                  <ion-button color="danger" (click)="confirmarEliminarHorario(horario)">Eliminar</ion-button>
                 </ion-item>
               </ion-list>
               <div *ngIf="horariosUsuario.length === 0" class="ion-text-center ion-padding" style="color:#d32f2f; font-weight:bold;">
@@ -244,6 +260,14 @@
             </ion-content>
           </ng-template>
         </ion-modal>
+
+        <ion-alert
+          [isOpen]="alertaEliminarHorarioAbierta"
+          header="¿Eliminar horario?"
+          message="¿Estás seguro de que deseas eliminar este horario? Esta acción no se puede deshacer."
+          [buttons]="botonesAlertaEliminarHorario"
+          (didDismiss)="alertaEliminarHorarioAbierta = false">
+        </ion-alert>
       </ion-card-content>
     </ion-card>
   </div>

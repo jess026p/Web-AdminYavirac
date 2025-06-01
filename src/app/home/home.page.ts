@@ -60,6 +60,26 @@ export class HomePage implements OnInit {
     'Viernes': 'Viernes',
     'Sábado': 'Sábado'
   };
+  alertaEliminarHorarioAbierta: boolean = false;
+  horarioAEliminar: any = null;
+  botonesAlertaEliminarHorario = [
+    {
+      text: 'Cancelar',
+      role: 'cancel',
+      handler: () => {
+        this.alertaEliminarHorarioAbierta = false;
+      }
+    },
+    {
+      text: 'Eliminar',
+      role: 'destructive',
+      handler: () => {
+        this.eliminarHorarioSeleccionado();
+      }
+    }
+  ];
+  mesResumen: number = 0;
+  anioResumen: number = 0;
 
   constructor(
     private http: HttpClient, 
@@ -105,12 +125,79 @@ export class HomePage implements OnInit {
     );
   }
 
+  // Devuelve el horario asignado para una fecha y hora específica
+  getHorarioParaFechaYHora(fechaStr: string, horaStr: string): any {
+    if (!this.horariosUsuario || this.horariosUsuario.length === 0) return null;
+    const fecha = new Date(fechaStr);
+    const diaSemana = fecha.getDay();
+    // Convertir hora a minutos para comparar
+    const [h, m, s] = horaStr.split(':').map(Number);
+    const minutosMarcacion = h * 60 + m;
+    return this.horariosUsuario.find(horario => {
+      // Verificar fecha
+      let fechaEnRango = true;
+      if (horario.fechaInicio && horario.fechaFinRepeticion) {
+        const inicio = new Date(horario.fechaInicio);
+        const fin = new Date(horario.fechaFinRepeticion);
+        fechaEnRango = fecha >= inicio && fecha <= fin;
+      }
+      // Verificar día de la semana
+      let diaEnRango = true;
+      if (Array.isArray(horario.dias)) {
+        diaEnRango = horario.dias.includes(diaSemana);
+      }
+      // Verificar hora
+      let horaEnRango = true;
+      if (horario.horaInicio && horario.horaFin) {
+        const [hi, mi] = horario.horaInicio.split(':').map(Number);
+        const [hf, mf] = horario.horaFin.split(':').map(Number);
+        const minInicio = hi * 60 + mi;
+        const minFin = hf * 60 + mf;
+        horaEnRango = minutosMarcacion >= minInicio && minutosMarcacion <= minFin;
+      }
+      return fechaEnRango && diaEnRango && horaEnRango;
+    });
+  }
+
+  // Devuelve el horario asignado para una fecha específica (sin hora)
+  getHorarioParaFecha(fechaStr: string): any {
+    if (!this.horariosUsuario || this.horariosUsuario.length === 0) return null;
+    const fecha = new Date(fechaStr);
+    const diaSemana = fecha.getDay();
+    return this.horariosUsuario.find(horario => {
+      // Verificar fecha
+      let fechaEnRango = true;
+      if (horario.fechaInicio && horario.fechaFinRepeticion) {
+        const inicio = new Date(horario.fechaInicio);
+        const fin = new Date(horario.fechaFinRepeticion);
+        fechaEnRango = fecha >= inicio && fecha <= fin;
+      }
+      // Verificar día de la semana
+      let diaEnRango = true;
+      if (Array.isArray(horario.dias)) {
+        diaEnRango = horario.dias.includes(diaSemana);
+      }
+      return fechaEnRango && diaEnRango;
+    });
+  }
+
   async verAsistencia(usuario: any) {
     try {
+      if (!this.horariosUsuario || this.horariosUsuario.length === 0) {
+        const horariosRes = await firstValueFrom(
+          this.http.get<any>(`http://localhost:3000/api/v1/horarios/user/${usuario.id}/locations`)
+        );
+        this.horariosUsuario = horariosRes.data || horariosRes;
+      }
+      // Log para depuración del mes y año enviados
+      console.log('Mes enviado al backend:', this.mesSeleccionado, 'Año:', this.anioSeleccionado);
       const res = await firstValueFrom(
         this.http.get<any>(`http://localhost:3000/api/v1/asistencias/resumen/${usuario.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
       );
       this.resumenAsistencia = res.data;
+      // Guardar el mes y año realmente calculados por el backend (si existen)
+      this.mesResumen = res.data.mes_calculado || this.mesSeleccionado;
+      this.anioResumen = res.data.anio_calculado || this.anioSeleccionado;
       this.usuarioSeleccionado = usuario;
       this.mostrarModalAsistencia = true;
     } catch (error) {
@@ -161,17 +248,45 @@ export class HomePage implements OnInit {
     this.mostrarHistorial = !this.mostrarHistorial;
     if (this.mostrarHistorial && this.historialRegistros.length === 0) {
       try {
+        if (!this.horariosUsuario || this.horariosUsuario.length === 0) {
+          const horariosRes = await firstValueFrom(
+            this.http.get<any>(`http://localhost:3000/api/v1/horarios/user/${this.usuarioSeleccionado.id}/locations`)
+          );
+          this.horariosUsuario = horariosRes.data || horariosRes;
+        }
         const res = await firstValueFrom(
           this.http.get<any>(`http://localhost:3000/api/v1/asistencias/historial/${this.usuarioSeleccionado.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
         );
-        this.historialRegistros = res.data || [];
+        this.historialRegistros = Array.isArray(res.data) ? res.data : [];
         for (const registro of this.historialRegistros) {
+          let horario = null;
+          // Buscar horario por fecha y hora de entrada
+          if (registro.fecha && registro.hora_entrada) {
+            horario = this.getHorarioParaFechaYHora(registro.fecha, registro.hora_entrada);
+          }
+          // Si no, buscar por hora de salida
+          if (!horario && registro.fecha && registro.hora_salida) {
+            horario = this.getHorarioParaFechaYHora(registro.fecha, registro.hora_salida);
+          }
+          // Si no, buscar por fecha solamente
+          if (!horario && registro.fecha) {
+            horario = this.getHorarioParaFecha(registro.fecha);
+          }
+          if (horario) {
+            registro.horario_rango = `${horario.horaInicio} - ${horario.horaFin}`;
+          } else {
+            registro.horario_rango = '-';
+          }
           if (registro.lat_entrada && registro.lng_entrada) {
             registro.direccion_entrada = await this.obtenerDireccion(registro.lat_entrada, registro.lng_entrada);
           }
           if (registro.lat_salida && registro.lng_salida) {
             registro.direccion_salida = await this.obtenerDireccion(registro.lat_salida, registro.lng_salida);
           }
+        }
+        if (this.historialRegistros.length === 0) {
+          // Mostrar mensaje visual si no hay registros
+          // Puedes usar SweetAlert2 aquí si lo deseas
         }
       } catch (error) {
         alert('No se pudo cargar el historial');
@@ -264,10 +379,13 @@ export class HomePage implements OnInit {
     }
   }
 
-  onFiltroMesAnioChange() {
-    this.verAsistencia(this.usuarioSeleccionado);
-    if (this.mostrarHistorial) {
-      this.verHistorial();
+  onFiltroMesAnioModalChange() {
+    this.historialRegistros = [];
+    if (this.usuarioSeleccionado) {
+      this.verAsistencia(this.usuarioSeleccionado);
+      if (this.mostrarHistorial) {
+        this.verHistorial();
+      }
     }
   }
 
@@ -276,5 +394,23 @@ export class HomePage implements OnInit {
       return dias.map((d: any) => this.diasNombre[d] || d).join(', ');
     }
     return this.diasNombre[dias] || dias || '-';
+  }
+
+  confirmarEliminarHorario(horario: any) {
+    this.horarioAEliminar = horario;
+    this.alertaEliminarHorarioAbierta = true;
+  }
+
+  async eliminarHorarioSeleccionado() {
+    if (!this.horarioAEliminar) return;
+    try {
+      await firstValueFrom(this.http.delete<any>(`http://localhost:3000/api/v1/horarios/${this.horarioAEliminar.id}`));
+      // Eliminar del array local para refrescar la vista
+      this.horariosUsuario = this.horariosUsuario.filter(h => h.id !== this.horarioAEliminar.id);
+    } catch (error) {
+      alert('No se pudo eliminar el horario');
+    }
+    this.alertaEliminarHorarioAbierta = false;
+    this.horarioAEliminar = null;
   }
 }
