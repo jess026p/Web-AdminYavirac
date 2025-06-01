@@ -2,8 +2,9 @@ import { Component, Input, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { IonicModule, ModalController, AlertController, ToastController } from '@ionic/angular';
-import { Usuario, Role, UsuariosService } from 'src/app/services/usuarios.service';
+import { Usuario, UsuariosService } from 'src/app/services/usuarios.service';
 import Swal from 'sweetalert2';
+import { RolesService, Role } from 'src/app/services/roles.service';
 
 @Component({
   selector: 'app-formulario-usuario',
@@ -20,6 +21,7 @@ export class FormularioUsuarioComponent implements OnInit {
   form!: FormGroup;
   catalogosIdentificacion: any[] = [];
   catalogosGenero: any[] = [];
+  roles: Role[] = [];
 
   get userForm(): FormGroup {
     return this.form;
@@ -30,7 +32,8 @@ export class FormularioUsuarioComponent implements OnInit {
     private modalController: ModalController,
     private alertController: AlertController,
     private toastController: ToastController,
-    private usuariosService: UsuariosService
+    private usuariosService: UsuariosService,
+    private rolesService: RolesService
   ) {}
 
   async ngOnInit() {
@@ -41,6 +44,8 @@ export class FormularioUsuarioComponent implements OnInit {
     ]);
     this.catalogosIdentificacion = catalogosIdentificacion || [];
     this.catalogosGenero = catalogosGenero || [];
+
+    this.roles = await this.rolesService.obtenerRoles();
 
     const defaultValues = {
       id: null,
@@ -54,7 +59,8 @@ export class FormularioUsuarioComponent implements OnInit {
       passwordChanged: true,
       gender: null,
       birthdate: null,
-      cellPhone: ''
+      cellPhone: '',
+      role_id: null
     };
 
     let initialValues = {
@@ -100,7 +106,8 @@ export class FormularioUsuarioComponent implements OnInit {
         initialValues.password,
         this.editMode ? [] : [Validators.required, Validators.minLength(6)]
       ],
-      passwordChanged: [initialValues.passwordChanged ?? true]
+      passwordChanged: [initialValues.passwordChanged ?? true],
+      role_id: [initialValues.role_id, Validators.required]
     });
 
     // Validación en blur con SweetAlert2
@@ -213,7 +220,8 @@ export class FormularioUsuarioComponent implements OnInit {
       identificationType: this.editMode ? (this.usuario?.identificationType) : rawData.identificationType,
       gender: this.editMode ? (this.usuario?.gender) : rawData.gender,
       birthdate: rawData.birthdate,
-      cellPhone: rawData.cellPhone || null
+      cellPhone: rawData.cellPhone || null,
+      role_id: rawData.role_id
     };
 
     // Eliminar campos que no deben ir en el payload

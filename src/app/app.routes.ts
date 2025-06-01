@@ -26,11 +26,6 @@ export const routes: Routes = [
       },
       
       {
-        path: 'roles',
-        loadComponent: () =>
-          import('./pages/roles/roles.page').then((m) => m.RolesPage),
-      },
-      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',
@@ -46,9 +41,5 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then( m => m.LoginPage)
-  },
-  {
-    path: 'roles',
-    loadComponent: () => import('./pages/roles/roles.page').then( m => m.RolesPage)
   },
 ];

@@ -65,7 +65,7 @@ export class HorariosPage implements OnInit {
     { label: 'JU', value: 4 },
     { label: 'VI', value: 5 },
     { label: 'SÁ', value: 6 },
-    { label: 'DO', value: 0 }
+    { label: 'DO', value: 7 }
   ];
 
   jornadasDisponibles = [
@@ -162,12 +162,10 @@ export class HorariosPage implements OnInit {
     try {
       const response = await this.horariosService.obtenerHorarioPorId(horarioId).toPromise();
       const horario = response.data;
-      // Llena los campos del formulario
       this.nombreTurno = horario.nombreTurno;
-      // Normaliza y ordena los días recibidos del backend para la visualización (domingo como 0)
       this.diasSeleccionados = Array.isArray(horario.dias) && horario.dias.length > 0
-        ? horario.dias.map((d: any) => d === 7 ? 0 : d).sort((a: number, b: number) => a - b)
-        : [1,2,3,4,5,6,0];
+        ? Array.from(new Set(horario.dias.map((d: any) => d === 0 ? 7 : d).filter((d: number) => d >= 1 && d <= 7))).map(Number).sort((a, b) => a - b)
+        : [1,2,3,4,5,6,7];
       if (!horario.dias || horario.dias.length === 0) {
         await this.mostrarAlerta('Advertencia', 'No se encontraron días asignados, se seleccionarán todos por defecto.', 'warning');
       }
@@ -285,7 +283,7 @@ export class HorariosPage implements OnInit {
 
   anteriorPaso() {
     if (this.horarioIdEnEdicion) {
-      this.router.navigate(['/layout/horarios-usuario'], { queryParams: { userId: this.usuarioSeleccionado } });
+      this.router.navigate(['/layout/home']);
       return;
     }
     this.paso--;
@@ -429,7 +427,7 @@ export class HorariosPage implements OnInit {
     const horario = this.horariosAgregados[i];
     this.nombreTurno = horario.nombreTurno;
     this.diasSeleccionados = Array.isArray(horario.dias) && horario.dias.length > 0
-      ? horario.dias.map((d: any) => Number(d)).sort((a: number, b: number) => a - b)
+      ? Array.from(new Set(horario.dias.map((d: any) => d === 0 ? 7 : Number(d)).filter((d: number) => d >= 1 && d <= 7))).map(Number).sort((a, b) => a - b)
       : [1,2,3,4,5,6,7];
     this.horaInicio = horario.horaInicio;
     this.horaFin = horario.horaFin;
@@ -471,8 +469,8 @@ export class HorariosPage implements OnInit {
       this.mostrarAlerta('Advertencia', 'Debes seleccionar al menos un día para el horario.', 'warning');
       return;
     }
-    // Normaliza y ordena los días antes de guardar
-    let dias: number[] = [...this.diasSeleccionados].map(d => d === 0 ? 7 : d).sort((a: number, b: number) => a - b);
+    // Normaliza y ordena los días antes de guardar (1-7, sin duplicados ni ceros)
+    let dias: number[] = Array.from(new Set(this.diasSeleccionados.map(d => d === 0 ? 7 : d).filter((d: number) => d >= 1 && d <= 7))).sort((a, b) => (a as number) - (b as number));
     const horario = {
       nombreTurno: this.nombreTurno,
       dias,
@@ -842,7 +840,7 @@ export class HorariosPage implements OnInit {
 
   cancelarFlujo() {
     if (this.horarioIdEnEdicion) {
-      this.router.navigate(['/layout/horarios-usuario'], { queryParams: { userId: this.usuarioSeleccionado } });
+      this.router.navigate(['/layout/home']);
     } else {
       // Vuelve a la selección de usuario
       this.usuarioSeleccionado = '';

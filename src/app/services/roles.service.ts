@@ -22,7 +22,7 @@ export class RolesService {
   ];
 
   // Conmutador para usar datos locales o API
-  private usarDatosLocales = true;
+  private usarDatosLocales = false;
 
   constructor(private http: HttpClient) {}
 

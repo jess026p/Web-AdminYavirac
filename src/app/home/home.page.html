@@ -245,6 +245,9 @@
                 <ion-item *ngFor="let horario of horariosUsuario">
                   <ion-label>
                     <strong>{{ horario.nombreTurno || 'Horario' }}</strong><br>
+                    <span *ngIf="horario.fechaInicio || horario.fechaFinRepeticion" style="color:#666; font-size:13px;">
+                      Asignación: {{ horario.fechaInicio || '-' }} al {{ horario.fechaFinRepeticion || '-' }}<br>
+                    </span>
                     {{ horario.horaInicio }} - {{ horario.horaFin }}<br>
                     Día(s): {{ getDiasTexto(horario.dias) }}<br>
                     Ubicación: {{ horario.ubicacionNombre || '-' }}

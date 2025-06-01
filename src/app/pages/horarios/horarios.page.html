@@ -138,6 +138,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                   <h3 style="margin-bottom: 4px;">{{ horario.nombreTurno ? horario.nombreTurno : 'Jornada ' + (i + 1) }}</h3>
+                  <p style="margin: 0; color: #666;">Asignación: {{ horario.fechaInicio || '-' }} al {{ horario.fechaFinRepeticion || '-' }}</p>
                   <p style="margin: 0; color: #666;">Días: {{ obtenerNombresDias(horario.dias) }}</p>
                   <p style="margin: 0; color: #666;">Horario: {{ horario.horaInicio }} - {{ horario.horaFin }}</p>
                   <p *ngIf="horario.horaAlmuerzoSalida && horario.horaAlmuerzoRegreso" style="margin: 0; color: #666;">
@@ -198,6 +199,7 @@
           <ion-item *ngFor="let horario of horariosAgregados; let i = index">
             <ion-label>
               <h3>{{ horario.nombreTurno ? horario.nombreTurno : 'Horario ' + (i + 1) }}</h3>
+              <p style="margin: 0; color: #666;">Asignación: {{ horario.fechaInicio || '-' }} al {{ horario.fechaFinRepeticion || '-' }}</p>
               <p>Días: {{ obtenerNombresDias(horario.dias) }}</p>
               <p>Horario: {{ horario.horaInicio }} - {{ horario.horaFin }}</p>
               <p *ngIf="horario.horaAlmuerzoSalida && horario.horaAlmuerzoRegreso">
