@@ -102,7 +102,7 @@ export class UsuariosPage implements OnInit {
     });
   }
 
-  async actualizarUsuario(usuario: Usuario) {
+  async actualizarUsuario(usuario: any) {
     if (!usuario.id) {
       this.mostrarMensaje('Error: No se puede actualizar un usuario sin ID', 'danger');
       return;
@@ -116,11 +116,32 @@ export class UsuariosPage implements OnInit {
     const usuarioSinId = { ...usuario };
     delete usuarioSinId.id;
 
+    // Extrae el role_id antes de eliminarlo del objeto usuario
+    const roleId = usuario.role_id;
+    delete usuarioSinId.role_id;
+
+    // Primero actualiza los datos básicos
     this.usuariosService.actualizarUsuario(usuario.id, usuarioSinId).subscribe({
       next: (response: Usuario) => {
-        this.cargarUsuarios();
-        this.mostrarMensaje('Usuario actualizado correctamente', 'success');
-        loading.dismiss();
+        // Luego actualiza el rol si existe
+        if (roleId) {
+          this.usuariosService.actualizarRolesUsuario(usuario.id!, [roleId]).subscribe({
+            next: () => {
+              this.cargarUsuarios();
+              this.mostrarMensaje('Usuario actualizado correctamente', 'success');
+              loading.dismiss();
+            },
+            error: (error) => {
+              console.error('Error al actualizar el rol:', error);
+              this.mostrarMensaje('Error al actualizar el rol del usuario.', 'danger');
+              loading.dismiss();
+            }
+          });
+        } else {
+          this.cargarUsuarios();
+          this.mostrarMensaje('Usuario actualizado correctamente', 'success');
+          loading.dismiss();
+        }
       },
       error: (error) => {
         console.error('Error al actualizar usuario:', error);

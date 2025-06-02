@@ -60,7 +60,7 @@ export class FormularioUsuarioComponent implements OnInit {
       gender: null,
       birthdate: null,
       cellPhone: '',
-      role_id: null
+      role_id: null as string | null
     };
 
     let initialValues = {
@@ -69,6 +69,10 @@ export class FormularioUsuarioComponent implements OnInit {
       password: '' // Nunca mostramos la contraseña real
     };
     
+    // Si el usuario tiene roles, asigna el id del primer rol a initialValues.role_id
+    if (this.usuario && Array.isArray(this.usuario.roles) && this.usuario.roles.length > 0) {
+      initialValues.role_id = this.usuario.roles[0].id;
+    }
 
     // Asegura que identificationType sea SIEMPRE un objeto completo del catálogo
     if (initialValues.identificationType && typeof initialValues.identificationType === 'object' && initialValues.identificationType.id) {
@@ -107,7 +111,7 @@ export class FormularioUsuarioComponent implements OnInit {
         this.editMode ? [] : [Validators.required, Validators.minLength(6)]
       ],
       passwordChanged: [initialValues.passwordChanged ?? true],
-      role_id: [initialValues.role_id, Validators.required]
+      role_id: [initialValues.role_id as string | null, Validators.required]
     });
 
     // Validación en blur con SweetAlert2
