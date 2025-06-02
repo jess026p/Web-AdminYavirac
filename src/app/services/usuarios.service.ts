@@ -29,6 +29,7 @@ export interface Usuario {
   passwordChanged?: boolean;
   avatar?: string;
   gender?: string;
+  enabled?: boolean;
 }
 
 @Injectable({
@@ -170,5 +171,9 @@ export class UsuariosService {
         map(res => res.data || res),
         catchError(this.handleError)
       );
+  }
+
+  toggleUsuarioEnabled(id: string, accion: 'enable' | 'disable') {
+    return this.http.patch(`${this.apiUrl}/${id}/${accion}`, {});
   }
 }

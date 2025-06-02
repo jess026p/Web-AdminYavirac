@@ -42,6 +42,13 @@
         </p>
       </ion-label>
       <ion-buttons slot="end">
+        <ion-toggle
+          [checked]="usuario.enabled"
+          (ionChange)="onToggleEnabled(usuario)"
+          color="success"
+          [attr.aria-label]="'Habilitar o deshabilitar usuario ' + usuario.name"
+          style="margin-right: 8px;">
+        </ion-toggle>
         <ion-button fill="clear" (click)="editarUsuario(usuario)">
           <img src="assets/imagenes/editar.png" class="icono-img" />
         </ion-button>

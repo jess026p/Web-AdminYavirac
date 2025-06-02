@@ -210,4 +210,20 @@ export class UsuariosPage implements OnInit {
     });
     toast.present();
   }
+
+  onToggleEnabled(usuario: any) {
+    const accion = usuario.enabled ? 'disable' : 'enable';
+    this.usuariosService.toggleUsuarioEnabled(usuario.id, accion).subscribe({
+      next: () => {
+        usuario.enabled = !usuario.enabled;
+        this.mostrarMensaje(
+          `Usuario ${usuario.enabled ? 'habilitado' : 'deshabilitado'} correctamente`,
+          'success'
+        );
+      },
+      error: () => {
+        this.mostrarMensaje('No se pudo cambiar el estado del usuario', 'danger');
+      }
+    });
+  }
 }
