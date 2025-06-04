@@ -59,7 +59,7 @@ export class UsuariosService {
       mensajeError = 'No autorizado. Vuelva a iniciar sesión.';
     }
 
-    return throwError(() => new Error(mensajeError));
+    return throwError(() => error);
   }
 
   obtenerUsuarios(): Observable<Usuario[]> {
@@ -73,7 +73,7 @@ export class UsuariosService {
 
   obtenerUsuarioPorId(id: string | number): Observable<Usuario> {
     if (id === undefined) {
-      return throwError(() => new Error('No se puede obtener un usuario sin ID'));
+      return throwError(() => ({ message: 'No se puede obtener un usuario sin ID' }));
     }
 
     return this.http.get<any>(`${this.apiUrl}/${id}`)
@@ -124,7 +124,7 @@ export class UsuariosService {
 
   eliminarUsuario(id: string | number): Observable<any> {
     if (id === undefined) {
-      return throwError(() => new Error('No se puede eliminar un usuario sin ID'));
+      return throwError(() => ({ message: 'No se puede eliminar un usuario sin ID' }));
     }
 
     return this.http.delete(`${this.apiUrl}/${id}`)
@@ -175,5 +175,13 @@ export class UsuariosService {
 
   toggleUsuarioEnabled(id: string, accion: 'enable' | 'disable') {
     return this.http.patch(`${this.apiUrl}/${id}/${accion}`, {});
+  }
+
+  verificarUsuario(username: string) {
+    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-username/${username}`);
+  }
+
+  verificarCorreo(email: string) {
+    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-email/${email}`);
   }
 }

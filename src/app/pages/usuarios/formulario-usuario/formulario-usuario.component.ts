@@ -1,10 +1,12 @@
 import { Component, Input, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AsyncValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { IonicModule, ModalController, AlertController, ToastController } from '@ionic/angular';
 import { Usuario, UsuariosService } from 'src/app/services/usuarios.service';
 import Swal from 'sweetalert2';
 import { RolesService, Role } from 'src/app/services/roles.service';
+import { Observable, of } from 'rxjs';
+import { map, debounceTime, switchMap, first, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-formulario-usuario',
@@ -22,6 +24,8 @@ export class FormularioUsuarioComponent implements OnInit {
   catalogosIdentificacion: any[] = [];
   catalogosGenero: any[] = [];
   roles: Role[] = [];
+  puedeGuardar: boolean = true;
+  verificandoUsuarioOCorreo: boolean = false;
 
   get userForm(): FormGroup {
     return this.form;
@@ -37,6 +41,7 @@ export class FormularioUsuarioComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
+    console.log('Usuario recibido para editar en el modal:', this.usuario);
     // Cargar ambos catálogos en paralelo
     const [catalogosIdentificacion, catalogosGenero] = await Promise.all([
       this.usuariosService.obtenerCatalogosIdentificacion().toPromise(),
@@ -56,7 +61,7 @@ export class FormularioUsuarioComponent implements OnInit {
       password: '',
       identification: '',
       identificationType: this.catalogosIdentificacion[0] || null,
-      passwordChanged: true,
+      passwordChanged: false,
       gender: null,
       birthdate: null,
       cellPhone: '',
@@ -126,6 +131,20 @@ export class FormularioUsuarioComponent implements OnInit {
         identificationType: typeof this.usuario.identificationType === 'object' && this.usuario.identificationType !== null ? (this.usuario.identificationType as { id: string }).id : this.usuario.identificationType ?? null
       });
     }
+
+    // Mostrar alert cuando el validador asíncrono detecte existencia
+    this.form.get('username')?.statusChanges.subscribe(() => {
+      const control = this.form.get('username');
+      if (control?.hasError('existe') && (control.dirty || control.touched)) {
+        this.mostrarAlerta('El nombre de usuario ya existe');
+      }
+    });
+    this.form.get('email')?.statusChanges.subscribe(() => {
+      const control = this.form.get('email');
+      if (control?.hasError('existe') && (control.dirty || control.touched)) {
+        this.mostrarAlerta('El correo electrónico ya existe');
+      }
+    });
   }
 
   setupBlurValidation() {
@@ -213,14 +232,13 @@ export class FormularioUsuarioComponent implements OnInit {
   async saveUser() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      await this.showMessage('Por favor, corrige los errores antes de guardar.');
+      await this.mostrarAlerta('Por favor, corrige los errores antes de guardar.');
       return;
     }
 
     const rawData = this.form.value;
     const usuarioData: any = {
       ...rawData,
-      // Si el campo no está en el formulario, usa el valor original (nunca null)
       identificationType: this.editMode ? (this.usuario?.identificationType) : rawData.identificationType,
       gender: this.editMode ? (this.usuario?.gender) : rawData.gender,
       birthdate: rawData.birthdate,
@@ -235,19 +253,50 @@ export class FormularioUsuarioComponent implements OnInit {
       delete usuarioData.password;
     }
 
-    console.log('Datos a enviar al backend:', usuarioData);
-    // Devuelve el usuario con id (si existe) para que la página lo use en la URL
-    this.modalController.dismiss({ usuario: { ...usuarioData, id: this.usuario?.id } });
-  }
+    this.form.disable();
+    const servicio = this.editMode
+      ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, usuarioData)
+      : this.usuariosService.crearUsuario(usuarioData);
 
-  async showMessage(msg: string) {
-    const toast = await this.toastController.create({
-      message: msg,
-      duration: 3000,
-      color: 'dark',
-      position: 'bottom'
+    servicio.subscribe({
+      next: (res) => {
+        this.form.enable();
+        // Devuelve el usuario con id (si existe) para que la página lo use en la URL
+        this.modalController.dismiss({ usuario: { ...usuarioData, id: this.editMode ? this.usuario!.id : res.id } });
+      },
+      error: async (err) => {
+        this.form.enable();
+        console.error('Error completo recibido:', err);
+        let mensaje = '';
+        // 1. Si el backend envía un mensaje de validación (array o string)
+        if (err.error && Array.isArray(err.error.message)) {
+          mensaje = err.error.message.join(', ');
+        } else if (err.error && typeof err.error.message === 'string' && err.error.message) {
+          mensaje = err.error.message;
+        }
+        // 2. Si el backend envía el error como string directamente
+        else if (err.error && typeof err.error === 'string') {
+          mensaje = err.error;
+        }
+        // 3. Si el backend envía un array directamente
+        else if (err.error && Array.isArray(err.error)) {
+          mensaje = err.error.join(', ');
+        }
+        // 4. Si es un error de conexión real
+        else if (err.status === 0) {
+          mensaje = 'No se pudo conectar con el servidor.';
+        }
+        // 5. Si hay algún otro mensaje
+        else if (err.message && typeof err.message === 'string') {
+          mensaje = err.message;
+        }
+        // Si no se encontró ningún mensaje útil
+        if (!mensaje) {
+          mensaje = 'Ocurrió un error inesperado.';
+        }
+        await this.mostrarAlerta(mensaje);
+      }
     });
-    await toast.present();
   }
 
   getNombreCatalogo(valor: any): string | null {
@@ -281,6 +330,57 @@ export class FormularioUsuarioComponent implements OnInit {
     const controlName = event.target.getAttribute('formcontrolname');
     if (controlName && this.form.get(controlName)) {
       this.form.get(controlName)?.setValue(valor, { emitEvent: false });
+    }
+  }
+
+  // Función para verificar usuario existente
+  async verificarUsuarioExistente() {
+    const username = this.form.get('username')?.value;
+    if (!username) return;
+    this.usuariosService.verificarUsuario(username).subscribe({
+      next: async (res: any) => {
+        const existe = (res && res.data && res.data.exists) || (res && res.exists);
+        if (existe) {
+          this.form.get('username')?.setErrors({ existe: true });
+          await this.mostrarAlerta('El nombre de usuario ya existe');
+        } else {
+          this.form.get('username')?.setErrors(null);
+        }
+      }
+    });
+  }
+
+  // Función para verificar correo existente
+  async verificarCorreoExistente() {
+    const email = this.form.get('email')?.value;
+    if (!email) return;
+    this.usuariosService.verificarCorreo(email).subscribe({
+      next: async (res: any) => {
+        const existe = (res && res.data && res.data.exists) || (res && res.exists);
+        if (existe) {
+          this.form.get('email')?.setErrors({ existe: true });
+          await this.mostrarAlerta('El correo electrónico ya existe');
+        } else {
+          this.form.get('email')?.setErrors(null);
+        }
+      }
+    });
+  }
+
+  async mostrarAlerta(mensaje: string) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      message: mensaje,
+      buttons: ['Aceptar'],
+      cssClass: 'custom-alert-error'
+    });
+    await alert.present();
+  }
+
+  async mostrarAlertaEmailInvalido() {
+    const emailControl = this.form.get('email');
+    if (emailControl && emailControl.invalid && emailControl.hasError('email')) {
+      await this.mostrarAlerta('El correo electrónico no tiene un formato válido.');
     }
   }
 }

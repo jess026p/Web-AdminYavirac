@@ -118,3 +118,29 @@ ion-button {
   min-width: 120px;
   max-width: 220px;
 }
+
+.custom-alert-error .alert-wrapper {
+  background: #fff0f0;
+  border: 2px solid #e53935;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(229, 57, 53, 0.15);
+}
+
+.custom-alert-error .alert-title {
+  color: #e53935;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.custom-alert-error .alert-message {
+  color: #b71c1c;
+  font-size: 1.1em;
+  margin-top: 8px;
+}
+
+.custom-alert-error .alert-button {
+  background: #e53935;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: bold;
+}

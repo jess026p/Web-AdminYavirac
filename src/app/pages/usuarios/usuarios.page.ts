@@ -3,13 +3,13 @@ import { IonicModule, AlertController, LoadingController, ToastController, Modal
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UsuariosService, Usuario, Role } from '../../services/usuarios.service';
-import { FormularioUsuarioComponent } from './formulario-usuario/formulario-usuario.component';
 import { firstValueFrom } from 'rxjs';
+import { FormularioUsuarioComponent } from './formulario-usuario/formulario-usuario.component';
 
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule, FormularioUsuarioComponent],
+  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule],
   templateUrl: './usuarios.page.html',
   styleUrls: ['./usuarios.page.scss'],
 })
@@ -68,14 +68,16 @@ export class UsuariosPage implements OnInit {
 
     const { data } = await modal.onDidDismiss();
 
+    console.log('Data recibida al cerrar el modal:', data);
+
     if (data?.usuario) {
       const usuarioData = {
         ...data.usuario
       };
+      console.log('UsuarioData que se enviará a actualizar/crear:', usuarioData);
       usuario ? this.actualizarUsuario(usuarioData) : this.crearUsuario(usuarioData);
     }
   }
-
 
   editarUsuario(usuario: Usuario) {
     this.abrirFormulario(usuario);
@@ -103,6 +105,7 @@ export class UsuariosPage implements OnInit {
   }
 
   async actualizarUsuario(usuario: any) {
+    console.log('Usuario recibido para actualizar:', usuario);
     if (!usuario.id) {
       this.mostrarMensaje('Error: No se puede actualizar un usuario sin ID', 'danger');
       return;

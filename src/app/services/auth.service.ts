@@ -10,8 +10,8 @@ export interface LoginData {
 
 export interface AuthResponse {
   data: {
-    token: string;
-    user: any;
+    accessToken: string;
+    auth: any;
   };
   message: string;
 }
@@ -22,6 +22,8 @@ export interface AuthResponse {
 export class AuthService {
   private apiUrl = 'http://localhost:3000/api/v1/auth';
   private isAuthenticated = new BehaviorSubject<boolean>(this.checkToken());
+  private userSubject = new BehaviorSubject<any>(this.getUserData());
+  user$ = this.userSubject.asObservable();
   
   constructor(
     private http: HttpClient,
@@ -51,9 +53,10 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data)
       .pipe(
         tap(response => {
-          if (response.data && response.data.token) {
-            this.setToken(response.data.token);
-            this.setUserData(response.data.user);
+          if (response.data && response.data.accessToken) {
+            this.setToken(response.data.accessToken);
+            this.setUserData(response.data.auth);
+            this.userSubject.next(response.data.auth);
             this.isAuthenticated.next(true);
           }
         }),
@@ -64,6 +67,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
+    this.userSubject.next(null);
     this.isAuthenticated.next(false);
     this.router.navigate(['/login']);
   }
