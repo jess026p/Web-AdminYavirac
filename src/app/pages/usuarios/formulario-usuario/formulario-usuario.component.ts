@@ -26,6 +26,8 @@ export class FormularioUsuarioComponent implements OnInit {
   roles: Role[] = [];
   puedeGuardar: boolean = true;
   verificandoUsuarioOCorreo: boolean = false;
+  private alertRef: HTMLIonAlertElement | null = null;
+  private alertAbierto: boolean = false;
 
   get userForm(): FormGroup {
     return this.form;
@@ -145,6 +147,24 @@ export class FormularioUsuarioComponent implements OnInit {
         this.mostrarAlerta('El correo electrónico ya existe');
       }
     });
+
+    // Limpio el error 'existe' cuando el usuario cambia el valor manualmente
+    this.form.get('username')?.valueChanges.subscribe(() => {
+      const control = this.form.get('username');
+      if (control?.hasError('existe')) {
+        const errors = { ...control.errors };
+        delete errors['existe'];
+        control.setErrors(Object.keys(errors).length ? errors : null);
+      }
+    });
+    this.form.get('email')?.valueChanges.subscribe(() => {
+      const control = this.form.get('email');
+      if (control?.hasError('existe')) {
+        const errors = { ...control.errors };
+        delete errors['existe'];
+        control.setErrors(Object.keys(errors).length ? errors : null);
+      }
+    });
   }
 
   setupBlurValidation() {
@@ -230,67 +250,39 @@ export class FormularioUsuarioComponent implements OnInit {
   }
 
   async saveUser() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      await this.mostrarAlerta('Por favor, corrige los errores antes de guardar.');
-      return;
+    // Limpio errores antes de guardar para evitar errores 'fantasma'
+    this.form.get('username')?.setErrors(null);
+    this.form.get('email')?.setErrors(null);
+    // Elimino el id si es creación
+    if (!this.editMode) {
+      delete this.form.value.id;
     }
-
-    const rawData = this.form.value;
-    const usuarioData: any = {
-      ...rawData,
-      identificationType: this.editMode ? (this.usuario?.identificationType) : rawData.identificationType,
-      gender: this.editMode ? (this.usuario?.gender) : rawData.gender,
-      birthdate: rawData.birthdate,
-      cellPhone: rawData.cellPhone || null,
-      role_id: rawData.role_id
-    };
-
-    // Eliminar campos que no deben ir en el payload
-    if ('id' in usuarioData) delete usuarioData.id;
-    if ('genderId' in usuarioData) delete usuarioData.genderId;
-    if (this.editMode && !usuarioData.password) {
-      delete usuarioData.password;
-    }
-
     this.form.disable();
     const servicio = this.editMode
-      ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, usuarioData)
-      : this.usuariosService.crearUsuario(usuarioData);
+      ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, this.form.value)
+      : this.usuariosService.crearUsuario(this.form.value);
 
     servicio.subscribe({
       next: (res) => {
         this.form.enable();
-        // Devuelve el usuario con id (si existe) para que la página lo use en la URL
-        this.modalController.dismiss({ usuario: { ...usuarioData, id: this.editMode ? this.usuario!.id : res.id } });
+        this.modalController.dismiss({ usuario: { ...this.form.value, id: this.editMode ? this.usuario!.id : res.id } });
       },
       error: async (err) => {
         this.form.enable();
-        console.error('Error completo recibido:', err);
         let mensaje = '';
-        // 1. Si el backend envía un mensaje de validación (array o string)
         if (err.error && Array.isArray(err.error.message)) {
           mensaje = err.error.message.join(', ');
         } else if (err.error && typeof err.error.message === 'string' && err.error.message) {
           mensaje = err.error.message;
-        }
-        // 2. Si el backend envía el error como string directamente
-        else if (err.error && typeof err.error === 'string') {
+        } else if (err.error && typeof err.error === 'string') {
           mensaje = err.error;
-        }
-        // 3. Si el backend envía un array directamente
-        else if (err.error && Array.isArray(err.error)) {
+        } else if (err.error && Array.isArray(err.error)) {
           mensaje = err.error.join(', ');
-        }
-        // 4. Si es un error de conexión real
-        else if (err.status === 0) {
+        } else if (err.status === 0) {
           mensaje = 'No se pudo conectar con el servidor.';
-        }
-        // 5. Si hay algún otro mensaje
-        else if (err.message && typeof err.message === 'string') {
+        } else if (err.message && typeof err.message === 'string') {
           mensaje = err.message;
         }
-        // Si no se encontró ningún mensaje útil
         if (!mensaje) {
           mensaje = 'Ocurrió un error inesperado.';
         }
@@ -339,12 +331,25 @@ export class FormularioUsuarioComponent implements OnInit {
     if (!username) return;
     this.usuariosService.verificarUsuario(username).subscribe({
       next: async (res: any) => {
-        const existe = (res && res.data && res.data.exists) || (res && res.exists);
+        let existe = false;
+        if (res && typeof res === 'object') {
+          if ('data' in res && res.data && typeof res.data === 'object' && 'exists' in res.data) {
+            existe = !!res.data.exists;
+          } else if ('exists' in res) {
+            existe = !!res.exists;
+          }
+        }
+        const control = this.form.get('username');
         if (existe) {
-          this.form.get('username')?.setErrors({ existe: true });
+          control?.setErrors({ ...control.errors, existe: true });
           await this.mostrarAlerta('El nombre de usuario ya existe');
         } else {
-          this.form.get('username')?.setErrors(null);
+          // Limpio el error 'existe' si ya no existe
+          if (control?.hasError('existe')) {
+            const errors = { ...control.errors };
+            delete errors['existe'];
+            control.setErrors(Object.keys(errors).length ? errors : null);
+          }
         }
       }
     });
@@ -356,24 +361,57 @@ export class FormularioUsuarioComponent implements OnInit {
     if (!email) return;
     this.usuariosService.verificarCorreo(email).subscribe({
       next: async (res: any) => {
-        const existe = (res && res.data && res.data.exists) || (res && res.exists);
+        let existe = false;
+        if (res && typeof res === 'object') {
+          if ('data' in res && res.data && typeof res.data === 'object' && 'exists' in res.data) {
+            existe = !!res.data.exists;
+          } else if ('exists' in res) {
+            existe = !!res.exists;
+          }
+        }
+        const control = this.form.get('email');
         if (existe) {
-          this.form.get('email')?.setErrors({ existe: true });
+          control?.setErrors({ ...control.errors, existe: true });
           await this.mostrarAlerta('El correo electrónico ya existe');
         } else {
-          this.form.get('email')?.setErrors(null);
+          // Limpio el error 'existe' si ya no existe
+          if (control?.hasError('existe')) {
+            const errors = { ...control.errors };
+            delete errors['existe'];
+            control.setErrors(Object.keys(errors).length ? errors : null);
+          }
         }
       }
     });
   }
 
   async mostrarAlerta(mensaje: string) {
+    // Si ya hay un alert abierto, no muestres otro
+    if (this.alertAbierto) return;
+    this.alertAbierto = true;
+    if (this.alertRef) {
+      try {
+        await this.alertRef.dismiss();
+      } catch (e) {}
+      this.alertRef = null;
+    }
     const alert = await this.alertController.create({
       header: 'Error',
       message: mensaje,
-      buttons: ['Aceptar'],
-      cssClass: 'custom-alert-error'
+      buttons: [{
+        text: 'Aceptar',
+        handler: () => {
+          if (this.alertRef) {
+            this.alertRef.dismiss();
+            this.alertRef = null;
+          }
+          this.alertAbierto = false;
+        }
+      }],
+      cssClass: 'custom-alert-error',
+      backdropDismiss: false
     });
+    this.alertRef = alert;
     await alert.present();
   }
 

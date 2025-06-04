@@ -329,6 +329,7 @@ export class HorariosPage implements OnInit {
         this.horariosService.updateHorario(horario.id, data).subscribe({
           next: () => {
             this.mostrarAlerta('Éxito', 'Horario actualizado correctamente.');
+            this.cargarHorarios(); // Refresca la lista de horarios tras editar
             this.cancelarFlujo();
           },
           error: (err) => {
@@ -441,6 +442,10 @@ export class HorariosPage implements OnInit {
     this.ubicacionNombre = horario.ubicacionNombre || '';
     this.ubicacionSeleccionada = horario.ubicacionSeleccionada || null;
     this.horarioEditandoIndex = i;
+    // Aseguro que el id se mantenga en el objeto editado
+    if (horario.id) {
+      this.horariosAgregados[i].id = horario.id;
+    }
     this.cdr.detectChanges();
   }
 
@@ -465,13 +470,21 @@ export class HorariosPage implements OnInit {
       this.horaFin = '';
       return;
     }
+    if (!this.fechaInicio || !this.fechaFinRepeticion) {
+      this.mostrarAlerta('Advertencia', 'Por favor, completa las fechas de inicio y fin de repetición.', 'warning');
+      return;
+    }
+    if (new Date(this.fechaFinRepeticion) < new Date(this.fechaInicio)) {
+      this.mostrarAlerta('Advertencia', 'La fecha de fin de repetición no puede ser anterior a la fecha de inicio del turno.', 'warning');
+      return;
+    }
     if (!this.diasSeleccionados || this.diasSeleccionados.length === 0) {
       this.mostrarAlerta('Advertencia', 'Debes seleccionar al menos un día para el horario.', 'warning');
       return;
     }
     // Normaliza y ordena los días antes de guardar (1-7, sin duplicados ni ceros)
     let dias: number[] = Array.from(new Set(this.diasSeleccionados.map(d => d === 0 ? 7 : d).filter((d: number) => d >= 1 && d <= 7))).sort((a, b) => (a as number) - (b as number));
-    const horario = {
+    const horario: any = {
       nombreTurno: this.nombreTurno,
       dias,
       horaInicio: this.horaInicio,
@@ -487,6 +500,10 @@ export class HorariosPage implements OnInit {
       ubicacionNombre: this.ubicacionNombre,
       ubicacionSeleccionada: this.ubicacionSeleccionada
     };
+    // Si estamos editando, aseguramos que el id se mantenga
+    if (this.horarioEditandoIndex !== null && this.horariosAgregados[this.horarioEditandoIndex]?.id) {
+      horario.id = this.horariosAgregados[this.horarioEditandoIndex].id;
+    }
     if (this.horarioEditandoIndex !== null) {
       this.horariosAgregados[this.horarioEditandoIndex] = horario;
       this.horarioEditandoIndex = null;
@@ -830,8 +847,16 @@ export class HorariosPage implements OnInit {
     // No es necesario hacer nada, el ngModel ya actualiza la vista
   }
 
-  validarFechaFin() {
-    // No es necesario hacer nada, el ngModel ya actualiza la vista
+  async validarFechaFinRepeticion() {
+    if (this.fechaInicio && this.fechaFinRepeticion) {
+      const fechaInicio = new Date(this.fechaInicio);
+      const fechaFin = new Date(this.fechaFinRepeticion);
+      
+      if (fechaFin < fechaInicio) {
+        await this.mostrarAlerta('Error', 'La fecha de fin de repetición no puede ser anterior a la fecha de inicio del turno.');
+        this.fechaFinRepeticion = '';
+      }
+    }
   }
 
   async onHoraFinChange() {

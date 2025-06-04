@@ -60,7 +60,7 @@
           <ion-col size="6">
             <ion-item>
               <ion-label position="stacked">Fin de repetición</ion-label>
-              <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha" required (ngModelChange)="onCampoEditado()"></ion-input>
+              <ion-input type="date" [(ngModel)]="fechaFinRepeticion" name="fechaFinRepeticion" placeholder="Selecciona la fecha" required (ngModelChange)="onCampoEditado(); validarFechaFinRepeticion()"></ion-input>
             </ion-item>
           </ion-col>
         </ion-row>
