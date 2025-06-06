@@ -250,37 +250,73 @@ export class FormularioUsuarioComponent implements OnInit {
   }
 
   async saveUser() {
-    // Limpio errores antes de guardar para evitar errores 'fantasma'
     this.form.get('username')?.setErrors(null);
     this.form.get('email')?.setErrors(null);
-    // Elimino el id si es creación
-    if (!this.editMode) {
-      delete this.form.value.id;
+
+    // Validación previa
+    const emailControl = this.form.get('email');
+    if (emailControl?.hasError('email')) {
+      const errors = { ...emailControl.errors };
+      delete errors['email'];
+      emailControl.setErrors(Object.keys(errors).length ? errors : null);
     }
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      await this.mostrarAlerta('Por favor, corrige los errores antes de guardar.');
+      return;
+    }
+
+    const rawData = { ...this.form.value };
+    delete rawData.id;
+
+    const usuarioData: any = {
+      ...rawData,
+      identificationType: this.editMode ? this.usuario?.identificationType : rawData.identificationType,
+      gender: this.editMode ? this.usuario?.gender : rawData.gender,
+    };
+
+    if (this.editMode && !usuarioData.password) {
+      delete usuarioData.password;
+    }
+
     this.form.disable();
     const servicio = this.editMode
-      ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, this.form.value)
-      : this.usuariosService.crearUsuario(this.form.value);
+      ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, usuarioData)
+      : this.usuariosService.crearUsuario(usuarioData);
+
+    // Después de guardar exitosamente, limpio el error 'existe'
+    const limpiarExiste = () => {
+      const usernameControl = this.form.get('username');
+      if (usernameControl && usernameControl.hasError('existe')) {
+        const errors = { ...usernameControl.errors };
+        delete errors['existe'];
+        usernameControl.setErrors(Object.keys(errors).length ? errors : null);
+      }
+    };
 
     servicio.subscribe({
       next: (res) => {
         this.form.enable();
-        this.modalController.dismiss({ usuario: { ...this.form.value, id: this.editMode ? this.usuario!.id : res.id } });
+        limpiarExiste();
+        this.modalController.dismiss({
+          usuario: { ...usuarioData, id: this.editMode ? this.usuario!.id : res.id },
+        });
       },
       error: async (err) => {
         this.form.enable();
         let mensaje = '';
         if (err.error && Array.isArray(err.error.message)) {
           mensaje = err.error.message.join(', ');
-        } else if (err.error && typeof err.error.message === 'string' && err.error.message) {
+        } else if (typeof err.error?.message === 'string') {
           mensaje = err.error.message;
-        } else if (err.error && typeof err.error === 'string') {
+        } else if (typeof err.error === 'string') {
           mensaje = err.error;
-        } else if (err.error && Array.isArray(err.error)) {
+        } else if (Array.isArray(err.error)) {
           mensaje = err.error.join(', ');
         } else if (err.status === 0) {
           mensaje = 'No se pudo conectar con el servidor.';
-        } else if (err.message && typeof err.message === 'string') {
+        } else if (typeof err.message === 'string') {
           mensaje = err.message;
         }
         if (!mensaje) {

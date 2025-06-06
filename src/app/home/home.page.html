@@ -271,6 +271,14 @@
           [buttons]="botonesAlertaEliminarHorario"
           (didDismiss)="alertaEliminarHorarioAbierta = false">
         </ion-alert>
+
+        <ion-alert
+          [isOpen]="alertaSinHorarioAbierta"
+          header="Información"
+          [message]="mensajeAlertaSinHorario"
+          [buttons]="botonesAlertaSinHorario"
+          (didDismiss)="alertaSinHorarioAbierta = false">
+        </ion-alert>
       </ion-card-content>
     </ion-card>
   </div>

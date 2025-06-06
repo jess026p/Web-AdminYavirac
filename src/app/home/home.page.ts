@@ -80,6 +80,17 @@ export class HomePage implements OnInit {
   ];
   mesResumen: number = 0;
   anioResumen: number = 0;
+  alertaSinHorarioAbierta: boolean = false;
+  mensajeAlertaSinHorario: string = '';
+  botonesAlertaSinHorario = [
+    {
+      text: 'Entendido',
+      role: 'cancel',
+      handler: () => {
+        this.alertaSinHorarioAbierta = false;
+      }
+    }
+  ];
 
   constructor(
     private http: HttpClient, 
@@ -200,8 +211,10 @@ export class HomePage implements OnInit {
       this.anioResumen = res.data.anio_calculado || this.anioSeleccionado;
       this.usuarioSeleccionado = usuario;
       this.mostrarModalAsistencia = true;
-    } catch (error) {
-      alert('No se pudo cargar el resumen de asistencia');
+    } catch (error: any) {
+      const mensaje = error?.error?.message || 'No se pudo cargar el resumen de asistencia';
+      this.mensajeAlertaSinHorario = mensaje;
+      this.alertaSinHorarioAbierta = true;
     }
   }
 
@@ -214,8 +227,10 @@ export class HomePage implements OnInit {
       this.horariosUsuario = res.data || res;
       this.usuarioSeleccionado = usuario;
       this.mostrarModalHorarios = true;
-    } catch (error) {
-      alert('No se pudo cargar los horarios');
+    } catch (error: any) {
+      const mensaje = error?.error?.message || 'No se pudo cargar los horarios';
+      this.mensajeAlertaSinHorario = mensaje;
+      this.alertaSinHorarioAbierta = true;
     }
   }
 
@@ -242,7 +257,8 @@ export class HomePage implements OnInit {
 
   async verHistorial() {
     if (!this.usuarioSeleccionado?.id) {
-      alert('No se puede mostrar el historial: usuario sin ID');
+      this.mensajeAlertaSinHorario = 'No se puede mostrar el historial: usuario sin ID';
+      this.alertaSinHorarioAbierta = true;
       return;
     }
     this.mostrarHistorial = !this.mostrarHistorial;
@@ -286,10 +302,12 @@ export class HomePage implements OnInit {
         }
         if (this.historialRegistros.length === 0) {
           // Mostrar mensaje visual si no hay registros
-          // Puedes usar SweetAlert2 aquí si lo deseas
+          this.mensajeAlertaSinHorario = 'No hay registros de asistencia para el período seleccionado';
+          this.alertaSinHorarioAbierta = true;
         }
       } catch (error) {
-        alert('No se pudo cargar el historial');
+        this.mensajeAlertaSinHorario = 'No se pudo cargar el historial';
+        this.alertaSinHorarioAbierta = true;
         this.historialRegistros = [];
       }
     }

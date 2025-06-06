@@ -181,7 +181,12 @@
               <div *ngIf="horariosAgregados[0].ubicacionNombre">
                 <strong>Ubicación actual:</strong> {{ horariosAgregados[0].ubicacionNombre }}<br>
                 <span *ngIf="horariosAgregados[0].ubicacionSeleccionada">
-                  Lat: {{ horariosAgregados[0].ubicacionSeleccionada.lat }}, Lng: {{ horariosAgregados[0].ubicacionSeleccionada.lng }}
+                  <ng-container *ngIf="direccionRealSeleccionada; else coords">
+                    Dirección: {{ direccionRealSeleccionada }}
+                  </ng-container>
+                  <ng-template #coords>
+                    Lat: {{ horariosAgregados[0].ubicacionSeleccionada.lat }}, Lng: {{ horariosAgregados[0].ubicacionSeleccionada.lng }}
+                  </ng-template>
                 </span>
               </div>
               <ion-button color="primary" (click)="abrirSelectorUbicacion(0)">

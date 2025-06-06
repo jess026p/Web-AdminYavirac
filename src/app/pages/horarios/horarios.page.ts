@@ -186,6 +186,22 @@ export class HorariosPage implements OnInit {
       this.ubicacionSeleccionada = (horario.ubicacionLat && horario.ubicacionLng)
         ? { lat: horario.ubicacionLat, lng: horario.ubicacionLng }
         : (horario.ubicacionSeleccionada || null);
+      // Obtener dirección real textual si hay coordenadas
+      if (this.ubicacionSeleccionada && this.ubicacionSeleccionada.lat && this.ubicacionSeleccionada.lng) {
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${this.ubicacionSeleccionada.lat}&lon=${this.ubicacionSeleccionada.lng}`);
+          const data = await response.json();
+          if (data && data.display_name) {
+            this.direccionRealSeleccionada = data.display_name;
+          } else {
+            this.direccionRealSeleccionada = '';
+          }
+        } catch (error) {
+          this.direccionRealSeleccionada = '';
+        }
+      } else {
+        this.direccionRealSeleccionada = '';
+      }
       // Si ya hay un horario agregado, actualízalo; si no, agrégalo
       if (this.horariosAgregados.length === 0) {
         this.horariosAgregados.push({
