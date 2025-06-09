@@ -18,6 +18,8 @@ import { Circle as OlCircle } from 'ol/geom';
 import { UserFilterPipe } from './user-filter.pipe';
 import { ActivatedRoute, Router, Params } from '@angular/router';
 import { IonInput } from '@ionic/angular';
+import { GeocodingService } from '../../services/geocoding.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-horarios',
@@ -110,7 +112,8 @@ export class HorariosPage implements OnInit {
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private geocodingService: GeocodingService
   ) {}
 
   ngOnInit() {
@@ -189,14 +192,19 @@ export class HorariosPage implements OnInit {
       // Obtener dirección real textual si hay coordenadas
       if (this.ubicacionSeleccionada && this.ubicacionSeleccionada.lat && this.ubicacionSeleccionada.lng) {
         try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${this.ubicacionSeleccionada.lat}&lon=${this.ubicacionSeleccionada.lng}`);
-          const data = await response.json();
-          if (data && data.display_name) {
-            this.direccionRealSeleccionada = data.display_name;
+          const data = await firstValueFrom(
+            this.geocodingService.reverseGeocode(
+              this.ubicacionSeleccionada.lat,
+              this.ubicacionSeleccionada.lng
+            )
+          );
+          if (data && data.data && data.data.display_name) {
+            this.direccionRealSeleccionada = data.data.display_name;
           } else {
             this.direccionRealSeleccionada = '';
           }
         } catch (error) {
+          console.error('Error al obtener dirección:', error);
           this.direccionRealSeleccionada = '';
         }
       } else {
@@ -243,6 +251,7 @@ export class HorariosPage implements OnInit {
         this.horarioEditandoIndex = 0;
       }
       this.enEdicionDeHorario = true;
+      this.cambiosSinGuardar = true;
       this.cdr.detectChanges();
     } catch (e) {
       await this.mostrarAlerta('Error', 'No se pudo cargar el horario para edición', 'error');
@@ -252,13 +261,21 @@ export class HorariosPage implements OnInit {
   cargarUsuarios() {
     this.usuariosService.obtenerUsuarios().subscribe({
       next: (usuarios: any[]) => {
-        this.usuarios = usuarios.map(u => ({
-          id: u.id,
-          name: u.name,
-          lastname: u.lastname,
-          email: u.email,
-          sinHorario: !u.horarios || u.horarios.length === 0
-        }));
+        this.usuarios = usuarios
+          .map(u => ({
+            id: u.id,
+            name: u.name,
+            lastname: u.lastname,
+            email: u.email,
+            sinHorario: !u.horarios || u.horarios.length === 0
+          }))
+          .sort((a, b) => {
+            const nombreA = (a.name || '').toLowerCase();
+            const nombreB = (b.name || '').toLowerCase();
+            if (nombreA < nombreB) return -1;
+            if (nombreA > nombreB) return 1;
+            return 0;
+          });
       },
       error: () => {
         this.usuarios = [];
@@ -642,10 +659,10 @@ export class HorariosPage implements OnInit {
 
       // Geocodificación inversa para obtener la dirección textual
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const response = await fetch(`https://cors-anywhere.herokuapp.com/https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
         const data = await response.json();
-        if (data && data.display_name) {
-          this.direccionRealSeleccionada = data.display_name;
+        if (data && data.data && data.data.display_name) {
+          this.direccionRealSeleccionada = data.data.display_name;
         } else {
           this.direccionRealSeleccionada = '';
         }
@@ -735,12 +752,11 @@ export class HorariosPage implements OnInit {
   async buscarDireccion() {
     if (!this.busquedaDireccion) return;
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.busquedaDireccion)}`
+      const data = await firstValueFrom(
+        this.geocodingService.searchAddress(this.busquedaDireccion)
       );
-      const data = await response.json();
-      if (data && data.length > 0) {
-        const result = data[0];
+      if (data && data.data && data.data.length > 0) {
+        const result = data.data[0];
         const lon = parseFloat(result.lon);
         const lat = parseFloat(result.lat);
         if (this.map) {
@@ -779,6 +795,7 @@ export class HorariosPage implements OnInit {
         this.mostrarAlerta('Error', 'Dirección no encontrada', 'error');
       }
     } catch (error) {
+      console.error('Error al buscar dirección:', error);
       this.mostrarAlerta('Error', 'Error al buscar la dirección', 'error');
     }
   }

@@ -40,7 +40,13 @@ export class UsuariosPage implements OnInit {
     this.usuariosService.obtenerUsuarios().subscribe({
       next: (respuesta: Usuario[]) => {
         console.log('Respuesta del backend para usuarios:', respuesta);
-        this.usuarios = respuesta;
+        this.usuarios = respuesta.sort((a, b) => {
+          const nombreA = (a.name || '').toLowerCase();
+          const nombreB = (b.name || '').toLowerCase();
+          if (nombreA < nombreB) return -1;
+          if (nombreA > nombreB) return 1;
+          return 0;
+        });
         this.usuariosFiltrados = this.usuarios;
         loading.dismiss();
       },
@@ -70,12 +76,9 @@ export class UsuariosPage implements OnInit {
 
     console.log('Data recibida al cerrar el modal:', data);
 
-    if (data?.usuario) {
-      const usuarioData = {
-        ...data.usuario
-      };
-      console.log('UsuarioData que se enviará a actualizar/crear:', usuarioData);
-      usuario ? this.actualizarUsuario(usuarioData) : this.crearUsuario(usuarioData);
+    if (data?.usuario && !data.error) {
+      this.cargarUsuarios();
+      this.mostrarMensaje(usuario ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente', 'success');
     }
   }
 

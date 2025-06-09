@@ -128,7 +128,12 @@
             </ion-button>
           </ion-col>
           <ion-col size="auto">
-            <ion-button color="primary" (click)="siguientePaso()" [disabled]="horariosAgregados.length === 0">Siguiente</ion-button>
+            <ion-button 
+              color="primary" 
+              (click)="siguientePaso()" 
+              [disabled]="cambiosSinGuardar || horariosAgregados.length === 0">
+              Siguiente
+            </ion-button>
           </ion-col>
         </ion-row>
         <div *ngIf="cambiosSinGuardar" style="color: #d35400; font-weight: bold; margin-top: 8px;">Tienes cambios sin guardar</div>
@@ -181,11 +186,11 @@
               <div *ngIf="horariosAgregados[0].ubicacionNombre">
                 <strong>Ubicación actual:</strong> {{ horariosAgregados[0].ubicacionNombre }}<br>
                 <span *ngIf="horariosAgregados[0].ubicacionSeleccionada">
-                  <ng-container *ngIf="direccionRealSeleccionada; else coords">
-                    Dirección: {{ direccionRealSeleccionada }}
+                  <ng-container *ngIf="direccionRealSeleccionada && direccionRealSeleccionada !== ''; else coords">
+                    <b>Dirección:</b> {{ direccionRealSeleccionada }}
                   </ng-container>
                   <ng-template #coords>
-                    Lat: {{ horariosAgregados[0].ubicacionSeleccionada.lat }}, Lng: {{ horariosAgregados[0].ubicacionSeleccionada.lng }}
+                    <b>Coordenadas:</b> Lat: {{ horariosAgregados[0].ubicacionSeleccionada.lat }}, Lng: {{ horariosAgregados[0].ubicacionSeleccionada.lng }}
                   </ng-template>
                 </span>
               </div>

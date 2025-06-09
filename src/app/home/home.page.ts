@@ -115,7 +115,13 @@ export class HomePage implements OnInit {
 
   cargarUsuarios() {
     this.userService.obtenerUsuarios().subscribe((usuarios: any[]) => {
-      this.usuarios = usuarios;
+      this.usuarios = usuarios.sort((a, b) => {
+        const nombreA = (a.name || '').toLowerCase();
+        const nombreB = (b.name || '').toLowerCase();
+        if (nombreA < nombreB) return -1;
+        if (nombreA > nombreB) return 1;
+        return 0;
+      });
       this.filtrarUsuarios();
     });
   }
@@ -205,6 +211,16 @@ export class HomePage implements OnInit {
       const res = await firstValueFrom(
         this.http.get<any>(`http://localhost:3000/api/v1/asistencias/resumen/${usuario.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
       );
+      // Ordenar los horarios del día por hora de inicio
+      if (res.data && Array.isArray(res.data.registro_hoy)) {
+        res.data.registro_hoy = res.data.registro_hoy.sort((a: any, b: any) => {
+          if (!a.horario || !b.horario) return 0;
+          // Extraer la hora de inicio (antes del guion)
+          const horaA = a.horario.split('-')[0].trim();
+          const horaB = b.horario.split('-')[0].trim();
+          return horaA.localeCompare(horaB);
+        });
+      }
       this.resumenAsistencia = res.data;
       // Guardar el mes y año realmente calculados por el backend (si existen)
       this.mesResumen = res.data.mes_calculado || this.mesSeleccionado;
@@ -270,10 +286,22 @@ export class HomePage implements OnInit {
           );
           this.horariosUsuario = horariosRes.data || horariosRes;
         }
+        const hoy = new Date();
+        const mesActual = hoy.getMonth() + 1;
+        const anioActual = hoy.getFullYear();
+        const mesFiltro = this.mesSeleccionado;
+        const anioFiltro = this.anioSeleccionado;
         const res = await firstValueFrom(
-          this.http.get<any>(`http://localhost:3000/api/v1/asistencias/historial/${this.usuarioSeleccionado.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
+          this.http.get<any>(`http://localhost:3000/api/v1/asistencias/historial/${this.usuarioSeleccionado.id}?mes=${mesFiltro}&anio=${anioFiltro}`)
         );
-        this.historialRegistros = Array.isArray(res.data) ? res.data : [];
+        let registros = Array.isArray(res.data) ? res.data : [];
+        // Si el filtro es el mes actual y año actual, y no se ha aplicado filtro manual, filtra hasta hoy
+        const filtroManual = this.filtroBusqueda && this.filtroBusqueda.trim().length > 0;
+        if (!filtroManual && mesFiltro === mesActual && anioFiltro === anioActual) {
+          const hoyStr = hoy.toISOString().slice(0, 10);
+          registros = registros.filter((r: any) => r.fecha <= hoyStr);
+        }
+        this.historialRegistros = registros;
         for (const registro of this.historialRegistros) {
           let horario = null;
           // Buscar horario por fecha y hora de entrada

@@ -280,25 +280,22 @@ export class FormularioUsuarioComponent implements OnInit {
       delete usuarioData.password;
     }
 
+    // Limpia el error 'existe' antes de guardar
+    const usernameControl = this.form.get('username');
+    if (usernameControl && usernameControl.hasError('existe')) {
+      const errors = { ...usernameControl.errors };
+      delete errors['existe'];
+      usernameControl.setErrors(Object.keys(errors).length ? errors : null);
+    }
+
     this.form.disable();
     const servicio = this.editMode
       ? this.usuariosService.actualizarUsuario(this.usuario!.id as string, usuarioData)
       : this.usuariosService.crearUsuario(usuarioData);
 
-    // Después de guardar exitosamente, limpio el error 'existe'
-    const limpiarExiste = () => {
-      const usernameControl = this.form.get('username');
-      if (usernameControl && usernameControl.hasError('existe')) {
-        const errors = { ...usernameControl.errors };
-        delete errors['existe'];
-        usernameControl.setErrors(Object.keys(errors).length ? errors : null);
-      }
-    };
-
     servicio.subscribe({
       next: (res) => {
         this.form.enable();
-        limpiarExiste();
         this.modalController.dismiss({
           usuario: { ...usuarioData, id: this.editMode ? this.usuario!.id : res.id },
         });
