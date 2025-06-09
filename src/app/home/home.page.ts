@@ -220,6 +220,24 @@ export class HomePage implements OnInit {
           const horaB = b.horario.split('-')[0].trim();
           return horaA.localeCompare(horaB);
         });
+        // Validación de horarios pasados sin marcación
+        const ahora = new Date();
+        const horaActualMin = ahora.getHours() * 60 + ahora.getMinutes();
+        res.data.registro_hoy.forEach((registro: any) => {
+          if (!registro.horario || registro.horario === '-') return;
+          // Extraer hora de fin del string "hh:mm:ss - hh:mm:ss"
+          const partes = registro.horario.split('-');
+          if (partes.length < 2) return;
+          const horaFinStr = partes[1].trim();
+          const [hf, mf, sf] = horaFinStr.split(':').map(Number);
+          const minFin = hf * 60 + mf;
+          // Si la hora de fin ya pasó y no hay marcación
+          if ((!registro.estado_entrada || registro.estado_entrada === '-' || registro.estado_entrada === null)
+            && minFin < horaActualMin) {
+            registro.estado_entrada = 'Horario sin marcar';
+            registro.motivo_entrada = 'Falta injustificada';
+          }
+        });
       }
       this.resumenAsistencia = res.data;
       // Guardar el mes y año realmente calculados por el backend (si existen)
