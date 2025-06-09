@@ -211,34 +211,40 @@ export class HomePage implements OnInit {
       const res = await firstValueFrom(
         this.http.get<any>(`http://localhost:3000/api/v1/asistencias/resumen/${usuario.id}?mes=${this.mesSeleccionado}&anio=${this.anioSeleccionado}`)
       );
-      // Ordenar los horarios del día por hora de inicio
-      if (res.data && Array.isArray(res.data.registro_hoy)) {
-        res.data.registro_hoy = res.data.registro_hoy.sort((a: any, b: any) => {
-          if (!a.horario || !b.horario) return 0;
-          // Extraer la hora de inicio (antes del guion)
-          const horaA = a.horario.split('-')[0].trim();
-          const horaB = b.horario.split('-')[0].trim();
-          return horaA.localeCompare(horaB);
-        });
-        // Validación de horarios pasados sin marcación
-        const ahora = new Date();
-        const horaActualMin = ahora.getHours() * 60 + ahora.getMinutes();
-        res.data.registro_hoy.forEach((registro: any) => {
-          if (!registro.horario || registro.horario === '-') return;
-          // Extraer hora de fin del string "hh:mm:ss - hh:mm:ss"
-          const partes = registro.horario.split('-');
-          if (partes.length < 2) return;
-          const horaFinStr = partes[1].trim();
-          const [hf, mf, sf] = horaFinStr.split(':').map(Number);
-          const minFin = hf * 60 + mf;
-          // Si la hora de fin ya pasó y no hay marcación
-          if ((!registro.estado_entrada || registro.estado_entrada === '-' || registro.estado_entrada === null)
-            && minFin < horaActualMin) {
-            registro.estado_entrada = 'Horario sin marcar';
-            registro.motivo_entrada = 'Falta injustificada';
-          }
-        });
-      }
+      // Filtrar solo los horarios vigentes hoy
+      const hoy = new Date();
+      const fechaHoy = hoy.toISOString().slice(0, 10);
+      res.data.registro_hoy = res.data.registro_hoy.filter((registro: any) => {
+        if (!registro.fechaInicio || !registro.fechaFinRepeticion) return true; // Si faltan datos, mostrar por defecto
+        const inicio = new Date(registro.fechaInicio);
+        const fin = new Date(registro.fechaFinRepeticion);
+        // Solo mostrar si hoy está en el rango [inicio, fin]
+        return hoy >= inicio && hoy <= fin;
+      });
+      res.data.registro_hoy = res.data.registro_hoy.sort((a: any, b: any) => {
+        if (!a.horario || !b.horario) return 0;
+        // Extraer la hora de inicio (antes del guion)
+        const horaA = a.horario.split('-')[0].trim();
+        const horaB = b.horario.split('-')[0].trim();
+        return horaA.localeCompare(horaB);
+      });
+      // Validación de horarios pasados sin marcación
+      const horaActualMin = hoy.getHours() * 60 + hoy.getMinutes();
+      res.data.registro_hoy.forEach((registro: any) => {
+        if (!registro.horario || registro.horario === '-') return;
+        // Extraer hora de fin del string "hh:mm:ss - hh:mm:ss"
+        const partes = registro.horario.split('-');
+        if (partes.length < 2) return;
+        const horaFinStr = partes[1].trim();
+        const [hf, mf, sf] = horaFinStr.split(':').map(Number);
+        const minFin = hf * 60 + mf;
+        // Si la hora de fin ya pasó y no hay marcación
+        if ((!registro.estado_entrada || registro.estado_entrada === '-' || registro.estado_entrada === null)
+          && minFin < horaActualMin) {
+          registro.estado_entrada = 'Horario sin marcar';
+          registro.motivo_entrada = 'Falta injustificada';
+        }
+      });
       this.resumenAsistencia = res.data;
       // Guardar el mes y año realmente calculados por el backend (si existen)
       this.mesResumen = res.data.mes_calculado || this.mesSeleccionado;
@@ -273,6 +279,10 @@ export class HomePage implements OnInit {
     this.resumenAsistencia = null;
     this.usuarioSeleccionado = null;
     this.historialRegistros = [];
+    // Restablecer filtros al mes y año actual
+    const hoy = new Date();
+    this.mesSeleccionado = hoy.getMonth() + 1;
+    this.anioSeleccionado = hoy.getFullYear();
   }
 
   cerrarModalHorarios() {
