@@ -30,6 +30,7 @@ export interface Usuario {
   avatar?: string;
   gender?: string;
   enabled?: boolean;
+  terminosAceptados?: boolean;
 }
 
 @Injectable({

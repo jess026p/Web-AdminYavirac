@@ -42,6 +42,16 @@
         </p>
       </ion-label>
       <ion-buttons slot="end">
+        <ion-icon *ngIf="usuario.terminosAceptados === true" name="checkmark-circle" color="success" title="Términos y condiciones aceptados" style="font-size: 1.6em; vertical-align: middle; margin-right: 8px;"></ion-icon>
+        <ion-icon *ngIf="usuario.terminosAceptados === false || usuario.terminosAceptados === undefined || usuario.terminosAceptados === null" name="alert-circle" color="danger" title="No ha aceptado los términos y condiciones" style="font-size: 1.6em; vertical-align: middle; margin-right: 8px;"></ion-icon>
+       
+        <ng-container *ngIf="usuario.terminosAceptados === true">
+          <img src="assets/imagenes/aceptado.png" alt="Términos aceptados" title="Términos y condiciones aceptados" style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle;" />
+        </ng-container>
+        <ng-container *ngIf="usuario.terminosAceptados === false || usuario.terminosAceptados === undefined || usuario.terminosAceptados === null">
+          <img src="assets/imagenes/alert.png" alt="No ha aceptado los términos" title="No ha aceptado los términos y condiciones" style="width: 30px; height: 30px; margin-right: 8px; vertical-align: middle;" />
+        </ng-container>
+
         <ion-toggle
           [checked]="usuario.enabled"
           (ionChange)="onToggleEnabled(usuario)"
