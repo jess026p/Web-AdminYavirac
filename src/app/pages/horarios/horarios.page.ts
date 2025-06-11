@@ -330,7 +330,9 @@ export class HorariosPage implements OnInit {
       if (horario.nombreTurno) data.nombreTurno = horario.nombreTurno;
       if (horario.horaAlmuerzoSalida) data.horaAlmuerzoSalida = horario.horaAlmuerzoSalida;
       if (horario.horaAlmuerzoRegreso) data.horaAlmuerzoRegreso = horario.horaAlmuerzoRegreso;
-      if (horario.toleranciaInicioAntes) data.toleranciaInicioAntes = horario.toleranciaInicioAntes;
+      if (horario.toleranciaInicioAntes !== undefined && horario.toleranciaInicioAntes !== null) {
+        data.toleranciaInicioAntes = String(horario.toleranciaInicioAntes);
+      }
       if (horario.ubicacionNombre) data.ubicacionNombre = horario.ubicacionNombre;
       if (horario.ubicacionSeleccionada) {
         data.ubicacionLat = horario.ubicacionSeleccionada.lat;
