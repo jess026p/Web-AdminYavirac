@@ -166,3 +166,15 @@ body {
   padding-top: 20px !important;
   margin-top: 16px !important;
 }
+
+.menu-activo {
+  background: #1976d2 !important;
+  color: #fff !important;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0003;
+}
+
+.menu-activo ion-icon[slot="start"] {
+  color: #fff !important;
+}

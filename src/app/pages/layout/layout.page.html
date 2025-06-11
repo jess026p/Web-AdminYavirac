@@ -10,15 +10,15 @@
     <ion-content>
       <ion-list>
         <ion-menu-toggle auto-hide="false">
-          <ion-item routerLink="/layout/home" routerDirection="root">
+          <ion-item routerLink="/layout/home" routerDirection="root" routerLinkActive="menu-activo" [routerLinkActiveOptions]="{ exact: true }">
             <ion-icon name="home-outline" slot="start"></ion-icon>
             <ion-label>Administrador</ion-label>
           </ion-item>
-          <ion-item routerLink="/layout/usuarios" routerDirection="root">
+          <ion-item routerLink="/layout/usuarios" routerDirection="root" routerLinkActive="menu-activo">
             <ion-icon name="person-outline" slot="start"></ion-icon>
             <ion-label>Usuarios</ion-label>
           </ion-item>
-          <ion-item routerLink="/layout/horarios" routerDirection="root">
+          <ion-item routerLink="/layout/horarios" routerDirection="root" routerLinkActive="menu-activo">
             <ion-icon name="calendar-outline" slot="start"></ion-icon>
             <ion-label>Horarios</ion-label>
           </ion-item>

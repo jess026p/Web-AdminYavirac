@@ -46,7 +46,7 @@
         <ion-icon *ngIf="usuario.terminosAceptados === false || usuario.terminosAceptados === undefined || usuario.terminosAceptados === null" name="alert-circle" color="danger" title="No ha aceptado los términos y condiciones" style="font-size: 1.6em; vertical-align: middle; margin-right: 8px;"></ion-icon>
        
         <ng-container *ngIf="usuario.terminosAceptados === true">
-          <img src="assets/imagenes/aceptado.png" alt="Términos aceptados" title="Términos y condiciones aceptados" style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle;" />
+          <img src="assets/imagenes/acept.png" alt="Términos aceptados" title="Términos y condiciones aceptados" style="width: 30px; height: 30px; margin-right: 8px; vertical-align: middle;" />
         </ng-container>
         <ng-container *ngIf="usuario.terminosAceptados === false || usuario.terminosAceptados === undefined || usuario.terminosAceptados === null">
           <img src="assets/imagenes/alert.png" alt="No ha aceptado los términos" title="No ha aceptado los términos y condiciones" style="width: 30px; height: 30px; margin-right: 8px; vertical-align: middle;" />
@@ -57,12 +57,13 @@
           (ionChange)="onToggleEnabled(usuario)"
           color="success"
           [attr.aria-label]="'Habilitar o deshabilitar usuario ' + usuario.name"
+          [attr.title]="usuario.enabled ? 'Usuario habilitado. Haz clic para deshabilitar.' : 'Usuario deshabilitado. Haz clic para habilitar.'"
           style="margin-right: 8px;">
         </ion-toggle>
-        <ion-button fill="clear" (click)="editarUsuario(usuario)">
+        <ion-button fill="clear" (click)="editarUsuario(usuario)" title="Editar usuario">
           <img src="assets/imagenes/editar.png" class="icono-img" />
         </ion-button>
-        <ion-button fill="clear" (click)="eliminarUsuario(usuario.id!)">
+        <ion-button fill="clear" (click)="eliminarUsuario(usuario.id!)" title="Eliminar usuario">
           <img src="assets/imagenes/delete.png" class="icono-img" />
         </ion-button>
       </ion-buttons>

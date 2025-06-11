@@ -7,12 +7,12 @@
 
       <form (submit)="login()">
         <ion-item class="input-item">
-          <ion-icon name="person-outline" slot="start"></ion-icon>
+          <img src="assets/imagenes/user.png" alt="Usuario" slot="start" style="width: 24px; height: 24px;" />
           <ion-input type="text" placeholder="Usuario" [(ngModel)]="username" name="username" required></ion-input>
         </ion-item>
 
         <ion-item class="input-item">
-          <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+          <img src="assets/imagenes/block.png" alt="Contraseña" slot="start" style="width: 24px; height: 24px;" />
           <ion-input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required></ion-input>
         </ion-item>
 
