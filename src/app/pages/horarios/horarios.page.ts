@@ -257,7 +257,8 @@ export class HorariosPage implements OnInit {
           name: u.name,
           lastname: u.lastname,
           email: u.email,
-          sinHorario: !u.horarios || u.horarios.length === 0
+          sinHorario: !u.horarios || u.horarios.length === 0,
+          enabled: u.enabled
         }));
       },
       error: () => {
@@ -267,34 +268,20 @@ export class HorariosPage implements OnInit {
     });
   }
 
-  siguientePaso() {
-    console.log('Valor actual de paso al entrar:', this.paso);
-    console.log('Al dar click en Siguiente, horariosAgregados:', this.horariosAgregados);
-
-    // SOLO limpiar si realmente cambió el usuario Y NO estás en edición desde backend
-    if (this.usuarioSeleccionado !== this.ultimoUsuarioSeleccionado && !this.enEdicionDeHorario) {
-      this.limpiarWizard();
-      this.ultimoUsuarioSeleccionado = this.usuarioSeleccionado;
-    }
-    this.usuarioSeleccionadoObj = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
-
-    // LOG antes de la validación
-    console.log('Validando antes de avanzar, paso:', this.paso, 'horariosAgregados:', this.horariosAgregados, 'length:', this.horariosAgregados.length);
-
-    if (this.enEdicionDeHorario && this.paso === 2) {
-      this.enEdicionDeHorario = false;
-    }
-
-    if (this.paso === 2 && this.horariosAgregados.length === 0) {
-      this.mostrarAlerta('Advertencia', 'Debes guardar el horario antes de continuar.', 'warning');
+  async siguientePaso() {
+    if (!this.usuarioSeleccionado) {
+      await this.mostrarAlerta('Error', 'Por favor selecciona un usuario.', 'error');
       return;
     }
 
-    this.paso++;
-    console.log('Nuevo valor de paso:', this.paso);
-    if (this.paso === 3) {
-      setTimeout(() => this.inicializarMapa(), 500);
+    const usuarioSeleccionado = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
+    if (!usuarioSeleccionado?.enabled) {
+      await this.mostrarAlerta('Error', 'No se puede asignar horario a un usuario deshabilitado.', 'error');
+      return;
     }
+
+    this.usuarioSeleccionadoObj = usuarioSeleccionado;
+    this.paso = 2;
   }
 
   anteriorPaso() {
