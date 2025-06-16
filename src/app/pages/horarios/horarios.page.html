@@ -115,7 +115,7 @@
         </ion-row>
         <ion-row class="ion-justify-content-between ion-margin-top">
           <ion-col size="auto">
-            <ion-button color="medium" (click)="anteriorPaso()">Anterior</ion-button>
+            <ion-button color="medium" (click)="anteriorPaso()" [disabled]="horarioIdEnEdicion && esPaso2()">Anterior</ion-button>
           </ion-col>
           <ion-col size="auto">
             <ion-button color="danger" (click)="cancelarFlujo()">Cancelar</ion-button>
@@ -259,7 +259,7 @@
         </div>
         <ion-row class="ion-justify-content-between ion-margin-top">
           <ion-col size="auto">
-            <ion-button color="medium" (click)="anteriorPaso()">Anterior</ion-button>
+            <ion-button color="medium" (click)="anteriorPaso()" [disabled]="horarioIdEnEdicion && esPaso2()">Anterior</ion-button>
           </ion-col>
           <ion-col size="auto">
             <ion-button color="danger" (click)="cancelarFlujo()">Cancelar</ion-button>

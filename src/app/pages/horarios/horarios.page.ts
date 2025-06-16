@@ -269,26 +269,42 @@ export class HorariosPage implements OnInit {
   }
 
   async siguientePaso() {
-    if (!this.usuarioSeleccionado) {
-      await this.mostrarAlerta('Error', 'Por favor selecciona un usuario.', 'error');
-      return;
+    if (this.paso === 1) {
+      if (!this.usuarioSeleccionado) {
+        await this.mostrarAlerta('Error', 'Por favor selecciona un usuario.', 'error');
+        return;
+      }
+      const usuarioSeleccionado = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
+      if (!usuarioSeleccionado?.enabled) {
+        await this.mostrarAlerta('Error', 'No se puede asignar horario a un usuario deshabilitado.', 'error');
+        return;
+      }
+      this.usuarioSeleccionadoObj = usuarioSeleccionado;
+      this.paso = 2;
+    } else if (this.paso === 2) {
+      if (this.horariosAgregados.length === 0) {
+        await this.mostrarAlerta('Advertencia', 'Debes guardar al menos un horario antes de continuar.', 'warning');
+        return;
+      }
+      if (this.cambiosSinGuardar) {
+        await this.mostrarAlerta('Advertencia', 'Debes guardar los cambios antes de continuar.', 'warning');
+        return;
+      }
+      this.paso = 3;
+      setTimeout(() => this.inicializarMapa(), 500);
     }
-
-    const usuarioSeleccionado = this.usuarios.find(u => u.id === this.usuarioSeleccionado);
-    if (!usuarioSeleccionado?.enabled) {
-      await this.mostrarAlerta('Error', 'No se puede asignar horario a un usuario deshabilitado.', 'error');
-      return;
-    }
-
-    this.usuarioSeleccionadoObj = usuarioSeleccionado;
-    this.paso = 2;
   }
 
   anteriorPaso() {
     if (this.horarioIdEnEdicion) {
-      this.router.navigate(['/layout/home']);
+      if (this.paso === 3) {
+        this.paso = 2;
+        return;
+      }
+      // Si está en edición y en paso 2, no hace nada (botón deshabilitado)
       return;
     }
+    // Flujo normal de creación
     this.paso--;
     if (this.paso === 3) {
       setTimeout(() => this.inicializarMapa(), 500);
@@ -516,6 +532,8 @@ export class HorariosPage implements OnInit {
       this.horariosAgregados.push(horario);
     }
     this.mostrarAlerta('Éxito', '¡Horario guardado correctamente!');
+    this.cambiosSinGuardar = false;
+    this.cdr.detectChanges(); // Forzar la detección de cambios
     if (!this.enEdicionDeHorario) {
       this.limpiarFormularioHorario();
     } else {
@@ -531,7 +549,6 @@ export class HorariosPage implements OnInit {
       this.atrasoPermitido = 10;
       this.fechaFinRepeticion = '';
     }
-    this.cambiosSinGuardar = false;
   }
 
   agregarNuevoHorario() {
@@ -898,5 +915,9 @@ export class HorariosPage implements OnInit {
 
   onCampoEditado() {
     this.cambiosSinGuardar = true;
+  }
+
+  esPaso2(): boolean {
+    return this.paso === 2;
   }
 } 
