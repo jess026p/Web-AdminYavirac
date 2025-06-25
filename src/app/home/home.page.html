@@ -91,6 +91,9 @@
               <div class="modal-asistencia-header">
                 <h2 class="nombre-usuario-modal">
                   {{ usuarioSeleccionado?.nombre || usuarioSeleccionado?.name }} {{ usuarioSeleccionado?.apellido || usuarioSeleccionado?.lastname }}
+                  <span *ngIf="!usuarioSeleccionado?.enabled" style="color: #d32f2f; font-size: 0.8em; font-weight: bold; display: block; margin-top: 4px;">
+                    (Usuario deshabilitado)
+                  </span>
                 </h2>
                 <div class="fecha-actual-modal">
                   <strong>Fecha actual:</strong> {{ fechaActual }}
